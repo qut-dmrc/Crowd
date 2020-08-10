@@ -3,4 +3,4 @@
 # platform: win-64
 click==7.1.2
 datetime==4.3
-socialreaper==0.3.0
+socialreaper==1.0.3
