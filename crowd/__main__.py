@@ -3,6 +3,8 @@ import click
 from socialreaper.apis import API
 from socialreaper.tools import CSV
 from .crowdapi import CrowdTangle
+from backports.datetime_fromisoformat import MonkeyPatch
+MonkeyPatch.patch_fromisoformat()
 
 @click.command()
 @click.argument('endpoint', nargs=1, type=click.Choice(['posts', 'posts/search'], case_sensitive=False), required=True)
