@@ -24,7 +24,7 @@ OPTIONS
   -ls/--lists          A comma-separated list of the IDs of lists to search within.               [string] [default: null]
   -s/--search_terms    Retrieve posts which contain the search terms                              [string] [default: null]
   -sdate/--start_date  Filter posts ranging from start_date (e.g "2020-08-08")         [string] [default:end_date-365days]
-  sedate/--end_date    Filter posts ranging to end_date (e.g "2020-08-08")                         [string] [default: now]
+  -edate/--end_date    Filter posts ranging to end_date (e.g "2020-08-08")                         [string] [default: now]
   --output_filename    File to write/append to with csv extension only ('result.csv')  [string][default:<currentTime>.csv]
   -off/--offset        Posts offset for pagination purpose                                               [int][default: 0] 
   -log/--log           Turning on logging option                                                    [bool][default: False] 
