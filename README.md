@@ -31,7 +31,7 @@ OPTIONS
 
 Examples:
   crowd "posts/search" --token="<API_TOKEN>"     Download all the available posts from posts/search endpoint
-  --lists="123,456" --search-terms="kw1,kw2"     restricted to lists IDs 123 and 456 matching keywords kw1 or kw2
+  --lists="123,456" --search_terms="kw1,kw2"     restricted to lists IDs 123 and 456 matching keywords kw1 or kw2
   --offset=500                                   offset 500 to access page 6 (each page returns maximum 100 posts)
 
 Source code available at https://github.com/qut-dmrc/Crowd.git
