@@ -3,7 +3,7 @@
 cd anaconda
 conda create --name "your_env"
 activate <your_env>
-git clone https://github.com/xueyingtan/Crowd.git
+git clone https://github.com/qut-dmrc/Crowd.git
 cd Crowd
 pip install -r requirements.txt
 pip install -e .
@@ -26,10 +26,12 @@ OPTIONS
   --start_date      Filter posts ranging from start_date (e.g "2020-08-08")         [string] [default:end_date-365days]
   --end_date        Filter posts ranging to end_date (e.g "2020-08-08")                         [string] [default: now]
   --output_filename File to write/append to with csv extension only ('result.csv')  [string][default:<currentTime>.csv]
+  --offset          Posts offset for pagination purpose                                               [int][default: 0] 
   --help
 
 Examples:
   crowd "posts/search" --token="<API_TOKEN>"     Download all the available posts from posts/search endpoint
   --lists="123,456" --search-terms="kw1,kw2"     restricted to lists IDs 123 and 456 matching keywords kw1 or kw2
+  --offset=500                                   offset 500 to access page 6 (each page returns maximum 100 posts)
 
-Source code available at https://github.com/xueyingtan/Crowd
+Source code available at https://github.com/qut-dmrc/Crowd.git
