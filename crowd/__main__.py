@@ -1,9 +1,9 @@
 import datetime
 import click
 from socialreaper.apis import API
-# from socialreaper.tools import CSV
+from socialreaper.tools import CSV
 from .crowdapi import CrowdTangle
-from .tools import CSV
+# from .tools import CSV
 from backports.datetime_fromisoformat import MonkeyPatch
 MonkeyPatch.patch_fromisoformat()
 import logging
