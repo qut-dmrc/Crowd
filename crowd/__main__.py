@@ -50,14 +50,14 @@ def main(config, token, lists, search_terms, start_date, end_date, output_filena
     if end_date:
         end_date = datetime.datetime.fromisoformat(end_date)
     
-    print(start_date, type(start_date))
-    print(end_date, type(end_date))
-    print(token, type(token))
-    print(lists, type(lists))
-    print(search_terms, type(search_terms))
-    print(output_filename, type(output_filename))
-    print(offset, type(offset))
-    print(log, type(log))
+    # print(start_date, type(start_date))
+    # print(end_date, type(end_date))
+    # print(token, type(token))
+    # print(lists, type(lists))
+    # print(search_terms, type(search_terms))
+    # print(output_filename, type(output_filename))
+    # print(offset, type(offset))
+    # print(log, type(log))
 
     timeFrames = getTimeframeList(start_date, end_date)
     if log:
