@@ -133,5 +133,5 @@ dmypy.json
 # logfile
 *.log
 
-# data file
+# output file
 *.csv

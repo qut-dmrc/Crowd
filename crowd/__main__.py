@@ -8,18 +8,57 @@ from .crowdapi import CrowdTangle
 from backports.datetime_fromisoformat import MonkeyPatch
 MonkeyPatch.patch_fromisoformat()
 import logging
+import yaml
 
 @click.command()
-@click.argument('endpoint', nargs=1, type=click.Choice(['posts', 'posts/search'], case_sensitive=False), required=True)
-@click.option('-token','--token', nargs=1, required=True)
+# @click.option('--endpoint', nargs=1, type=click.Choice(['posts', 'posts/search'], case_sensitive=False), required=True)
+@click.option('-config','--config', nargs=1, default="default_query.yml")
+@click.option('-t','--token', nargs=1)
 @click.option('-ls','--lists', nargs=1)
-@click.option('-s','--search_terms', nargs=1, default="")
-@click.option('-sdate','--start_date', nargs=1, type=datetime.datetime.fromisoformat)
-@click.option('-edate','--end_date', nargs=1, type=datetime.datetime.fromisoformat, default=datetime.datetime.now().isoformat())
-@click.option('--output_filename', nargs=1, default="{}.csv".format(datetime.datetime.now().replace(microsecond=0).isoformat().replace(":",'.')))
-@click.option('-off','--offset', nargs=1, default=0)
-@click.option('-log','--log', 'log', flag_value=True, default=False)
-def main(token, endpoint, lists, search_terms, start_date, end_date, output_filename, offset, log):
+@click.option('-s','--search_terms', nargs=1)
+@click.option('-sdate','--start_date', nargs=1)
+@click.option('-edate','--end_date', nargs=1)
+@click.option('--output_filename', nargs=1)
+@click.option('-off','--offset', nargs=1)
+@click.option('-log','--log', 'log', flag_value=True)
+def main(config, token, lists, search_terms, start_date, end_date, output_filename, offset, log):
+    if config:
+        with open(config) as f:
+            params = yaml.full_load(f)
+
+        # convert params to variables       
+        endpoint = params['endpoint'] or "posts/search"
+        if not token:
+            token = params['token']
+        if not lists:
+            lists = params['lists']
+        if not search_terms:
+            search_terms = params['search_terms'] or ""
+        if not start_date:
+            start_date = params['start_date']
+        if not end_date:
+            end_date = params['end_date'] or datetime.datetime.now().isoformat()
+        if not output_filename:
+            output_filename = params['output_filename'] or "{}.csv".format(datetime.datetime.now().replace(microsecond=0).isoformat().replace(":",'.'))
+        if not offset:
+            offset = params['offset'] or 0
+        if not log:
+            log = params['log'] or False
+
+    if start_date:
+        start_date = datetime.datetime.fromisoformat(start_date)
+    if end_date:
+        end_date = datetime.datetime.fromisoformat(end_date)
+    
+    print(start_date, type(start_date))
+    print(end_date, type(end_date))
+    print(token, type(token))
+    print(lists, type(lists))
+    print(search_terms, type(search_terms))
+    print(output_filename, type(output_filename))
+    print(offset, type(offset))
+    print(log, type(log))
+
     timeFrames = getTimeframeList(start_date, end_date)
     if log:
         logging.basicConfig(filename='paging.log',level=logging.INFO)
