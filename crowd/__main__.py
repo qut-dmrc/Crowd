@@ -1,14 +1,15 @@
 import datetime
 import click
 import csv
+import logging
+import yaml
+import os
 from socialreaper.apis import API
 from socialreaper.tools import flatten,fill_gaps
 from .crowdapi import CrowdTangle
 # from .tools import CSV
 from backports.datetime_fromisoformat import MonkeyPatch
 MonkeyPatch.patch_fromisoformat()
-import logging
-import yaml
 
 @click.command()
 # @click.option('--endpoint', nargs=1, type=click.Choice(['posts', 'posts/search'], case_sensitive=False), required=True)
@@ -23,7 +24,7 @@ import yaml
 @click.option('-log','--log', 'log', flag_value=True)
 def main(config, token, lists, search_terms, start_date, end_date, output_filename, offset, log):
     if config:
-        with open(config) as f:
+        with open(os.path.join(os.getcwd(),config)) as f:
             params = yaml.full_load(f)
 
         # convert params to variables       
