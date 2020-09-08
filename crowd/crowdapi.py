@@ -10,6 +10,8 @@ class CrowdTangle(API):
     def api_call(self, edge, parameters, return_results=True):
         req = self.get("%s/%s" % (self.url, edge), params=parameters)
 
+        # print(req)
+
         if not req:
             return None
 
@@ -56,6 +58,28 @@ class CrowdTangle(API):
         parameters = self.merge_params(parameters, params)
 
         return self.api_call("posts/search", parameters)
+
+    ## The largest margin between startDate and endDate must be less than one year.
+    ##TODO timeframe must be sql interval format
+    def links(self, link, count=100, include_history=None, include_summary=None,
+                end_date=None, offset=0, platforms=None, search_field=None,
+                sort_by="date",start_date=None, **params):
+
+        count = 100 if count > 100 else count
+        parameters = {"link": link,
+                      "count": count,
+                      "endDate": end_date,
+                      "includeHistory": include_history,
+                      "offset": offset,
+                      "platforms": platforms,
+                      "searchField": search_field,
+                      "sortBy": sort_by,
+                      "startDate": start_date,
+                      "token": self.key}
+
+        parameters = self.merge_params(parameters, params)
+
+        return self.api_call("links", parameters)
 
     # def guess_channel_id(self, username, count=5):
     #     parameters = {
