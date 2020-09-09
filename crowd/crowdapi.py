@@ -10,8 +10,6 @@ class CrowdTangle(API):
     def api_call(self, edge, parameters, return_results=True):
         req = self.get("%s/%s" % (self.url, edge), params=parameters)
 
-        # print(req)
-
         if not req:
             return None
 
@@ -55,6 +53,7 @@ class CrowdTangle(API):
                       "verified": verified,
                       "verifiedOnly": verified_only,
                       "token": self.key}
+
         parameters = self.merge_params(parameters, params)
 
         return self.api_call("posts/search", parameters)

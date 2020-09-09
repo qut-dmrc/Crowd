@@ -19,13 +19,15 @@ MonkeyPatch.patch_fromisoformat()
 @click.option('-t','--token', nargs=1)
 @click.option('-ls','--lists', nargs=1)
 @click.option('-s','--search_terms', nargs=1)
+@click.option('-and', '--and_terms', nargs=1)
+@click.option('-not','--not_terms', nargs=1)
 @click.option('-sdate','--start_date', nargs=1)
 @click.option('-edate','--end_date', nargs=1)
 @click.option('--output_filename', nargs=1)
 @click.option('-off','--offset', nargs=1)
 @click.option('-log','--log', 'log', flag_value=True)
 @click.option('-links','--links', nargs=1)
-def main(config, token, lists, search_terms, start_date, end_date, output_filename, offset, log, links):
+def main(config, token, lists, search_terms, and_terms, not_terms, start_date, end_date, output_filename, offset, log, links):
     if config:
         with open(os.path.join(os.getcwd(),config)) as f:
             params = yaml.full_load(f)
@@ -50,6 +52,10 @@ def main(config, token, lists, search_terms, start_date, end_date, output_filena
                 lists = params['lists']
             if not search_terms:
                 search_terms = params['search_terms'] or ""
+            if not and_terms:
+                and_terms = params['AND_terms'] or None
+            if not not_terms:
+                not_terms = params['NOT_terms'] or None
         if endpoint == "links":
             if not links:
                 links = params['links'] or []
@@ -69,6 +75,8 @@ def main(config, token, lists, search_terms, start_date, end_date, output_filena
     # print(offset, type(offset))
     # print(log, type(log))
     # print(links, type(links))
+    # print(and_terms, type(and_terms))
+    # print(not_terms, type(not_terms))
 
 
     timeFrames = getTimeframeList(start_date, end_date)
@@ -94,7 +102,7 @@ def main(config, token, lists, search_terms, start_date, end_date, output_filena
         ct = CrowdTangle(token)
         print("Retrieving from {} to {}".format(start,end))
         if endpoint=='posts/search':
-            res = ct.postSearch(search_term=search_terms, inListIds=inListIds, start_date=start, end_date=end, offset=offset)
+            res = ct.postSearch(search_term=search_terms, and_kw=and_terms, not_kw=not_terms, inListIds=inListIds, start_date=start, end_date=end, offset=offset)
             if res['result'] and res['result']['posts']:
                 # if actualstartDate in res['result']:
                 #     nextEndDate

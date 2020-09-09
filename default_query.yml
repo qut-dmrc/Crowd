@@ -3,10 +3,11 @@
 token: ""                                          #[string][default: ""][REQUIRED] <API Token could be acquired from your dashboard>
 endpoint: "posts/search"                           #[default: "posts/search"]
 search_terms: null                                 #[string][default: ""]  e.g. "abc.net.au"
+AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
+NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 start_date : null                                  #[string][default: null] e.g."2020-02-02"
 end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
 lists: null                                        #[string][default:null] e.g. "123,456"
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
 offset: 0                                          #[int][default: 0] 
 log: true                                          #[boolean][default: false]
-
