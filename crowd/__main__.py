@@ -25,8 +25,9 @@ MonkeyPatch.patch_fromisoformat()
 @click.option('--output_filename', nargs=1)
 @click.option('-off','--offset', nargs=1)
 @click.option('-log','--log', 'log', flag_value=True)
+@click.option('-h','--history', 'history', flag_value=True)
 @click.option('-links','--links', nargs=1)
-def main(config, token, lists, search_terms, and_terms, not_terms, start_date, end_date, output_filename, offset, log, links):
+def main(config, token, lists, search_terms, and_terms, not_terms, start_date, end_date, output_filename, offset, log, history, links):
     if config:
         with open(os.path.join(os.getcwd(),config)) as f:
             params = yaml.full_load(f)
@@ -55,6 +56,9 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                 and_terms = params['AND_terms'] or None
             if not not_terms:
                 not_terms = params['NOT_terms'] or None
+            if not history:
+                history = params['history'] or False
+            
         if endpoint == "links":
             if not links:
                 links = params['links'] or []
@@ -73,7 +77,7 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
         inListIds = None
     actualStartDate = end_date
     prevActualStartDate = None
-
+    hasHeader = False
     while(not start_date or actualStartDate>start_date and actualStartDate != prevActualStartDate):
         timeFrames = getTimeframeList(start_date, actualStartDate)
         for timeframe in timeFrames:
@@ -82,14 +86,21 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
             ct = CrowdTangle(token)
             print("Retrieving from {} to {}".format(start,end))
             if endpoint=='posts/search':
-                res = ct.postSearch(search_term=search_terms, and_kw=and_terms, not_kw=not_terms, inListIds=inListIds, start_date=start, end_date=end, offset=offset)
+                res = ct.postSearch(search_term=search_terms, and_kw=and_terms, not_kw=not_terms, inListIds=inListIds, start_date=start, end_date=end, offset=offset, include_history=history)
                 if res['result'] and res['result']['posts']:
                     # flatten dictionary and fill gap
                     fieldnames, data = fill_gaps([flatten(datum) for datum in list(res['result']['posts'])])
                     with open(output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
                         writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator='\n', extrasaction='ignore')
-                        writer.writeheader()
+                        # write header once
+                        if not hasHeader:
+                            writer.writeheader()
+                            hasHeader = True
                         writer.writerows(data)
+                        # post_ids = ["838988326148968_3047914181923027","2281959232017693_2633403723539907"]
+                        # filteredData = [datum for datum in data if datum['platformId'] in post_ids]
+                        # writer.writerows(filteredData)
+                        # break
                         while 'nextPage' in res['result']['pagination']:
                             nextPage = res['result']['pagination']['nextPage']
                             if log:
