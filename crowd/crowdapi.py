@@ -80,6 +80,15 @@ class CrowdTangle(API):
 
         return self.api_call("links", parameters)
 
+    def post(self, _id, include_history=None, **params):
+
+        parameters = {"includeHistory": include_history,
+                      "token": self.key}
+
+        parameters = self.merge_params(parameters, params)
+
+        return self.api_call("post/{}".format(_id), parameters)
+
     # def guess_channel_id(self, username, count=5):
     #     parameters = {
     #         "forUsername": username,

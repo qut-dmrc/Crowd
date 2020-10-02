@@ -1,0 +1,8 @@
+## set to null for any param that's not required for your search
+## search parameters
+token: ""                                          
+endpoint: "post"                           #[default: "post"]
+ids: "838988326148968_3047914181923027, 1526661957548172_2779162355631453" #platform ids
+output_filename: "history.csv"                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv" 
+log: true                                          #[boolean][default: false]                                
+history: true                                       #[boolean][default: false]
