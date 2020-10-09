@@ -122,6 +122,7 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                 print("Retrieving from {} to {}".format(start,end))
                 if endpoint=='posts/search':
                     res = ct.postSearch(search_term=search_terms, and_kw=and_terms, not_kw=not_terms, inListIds=inListIds, start_date=start, end_date=end, offset=offset, include_history=history)
+
                     if res['result'] and res['result']['posts']:
                         # flatten dictionary and fill gap
                         fieldnames, data = fill_gaps([flatten(datum) for datum in list(res['result']['posts'])])
@@ -144,10 +145,11 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                                 # retrieve next page end point and params
                                 nextPageParams = nextPage.replace("https://api.crowdtangle.com/", "")
                                 if not search_terms or search_terms == "":
-                                    nextPageParams = nextPageParams + "&searchTerm=None"
+                                    nextPageParams = nextPageParams + "&searchTerm="
                                 res = ct.api_call(nextPageParams,"")
                                 # print(res)
                                 fieldnames, data = fill_gaps([flatten(datum) for datum in list(res['result']['posts'])])
+                                last_date = data[-1]['date']
                                 writer.writerows(data)
                 elif endpoint=="links":
                     for i in range(len(links)):
