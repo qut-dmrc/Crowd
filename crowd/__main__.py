@@ -88,6 +88,7 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
         inListIds = lists.strip().replace(" ","")
     else:
         inListIds = None
+    last_date = None
     if endpoint == "post":
         ids = ids.strip().replace(" ","").split(",")
         ct = CrowdTangle(token)
@@ -124,6 +125,7 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                     if res['result'] and res['result']['posts']:
                         # flatten dictionary and fill gap
                         fieldnames, data = fill_gaps([flatten(datum) for datum in list(res['result']['posts'])])
+                        last_date = data[-1]['date']
                         with open(output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
                             writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator='\n', extrasaction='ignore')
                             # write header once
@@ -141,8 +143,10 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                                     logging.info(nextPage)
                                 # retrieve next page end point and params
                                 nextPageParams = nextPage.replace("https://api.crowdtangle.com/", "")
+                                if not search_terms or search_terms == "":
+                                    nextPageParams = nextPageParams + "&searchTerm=None"
                                 res = ct.api_call(nextPageParams,"")
-                                
+                                # print(res)
                                 fieldnames, data = fill_gaps([flatten(datum) for datum in list(res['result']['posts'])])
                                 writer.writerows(data)
                 elif endpoint=="links":
@@ -169,15 +173,19 @@ def main(config, token, lists, search_terms, and_terms, not_terms, start_date, e
                                     writer.writerows(data)
                 else:
                     print('End point {} not supported'.format(endpoint))
+            
             # getting actual start date
-            prevActualStartDate = actualStartDate 
-            header = pd.read_csv(output_filename, nrows=1)
-            headers = header.columns.values
-            dateIndex = np.where( headers=='date')
-            with open(output_filename,'r',encoding='utf-8') as result:
-                last_line = result.readlines()[-1].strip().split(',')
-                actualStartDate = np.array(last_line)[dateIndex][0]
-                actualStartDate = datetime.datetime.fromisoformat(actualStartDate)
+            prevActualStartDate = actualStartDate
+            # header = pd.read_csv(output_filename, nrows=1)
+            # headers = header.columns.values
+            # dateIndex = np.where( headers=='date')
+            # with open(output_filename,'r',encoding='utf-8') as result:
+                # last_line = result.readlines()[-1].strip().split(',')
+                # actualStartDate = np.array(last_line)[dateIndex][0]
+                # actualStartDate = last_line[2]
+            actualStartDate = last_date
+            # print(actualStartDate)
+            actualStartDate = datetime.datetime.fromisoformat(actualStartDate)
             if actualStartDate>start_date:
                 end_date = actualStartDate
 
