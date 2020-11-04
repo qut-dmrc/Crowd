@@ -1,0 +1,7 @@
+
+token: ""                                          #[string][default: ""][REQUIRED] <API Token could be acquired from your dashboard>
+endpoint: "post"
+ids: "947867908642430_2787036941392175,6043890805_10156599380060806"
+output_filename: "post.csv"
+log: True
+history: True
