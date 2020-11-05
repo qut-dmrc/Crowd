@@ -12,6 +12,7 @@ from io import StringIO
 from backports.datetime_fromisoformat import MonkeyPatch
 
 from .exceptions import *
+from .togbq import *
 
 class API:
     def __init__(self, rate_limit=None, session=None):
@@ -221,6 +222,10 @@ class CrowdTangle(API):
             self.output_filename = params['output_filename'] or \
                 "{}.csv".format(datetime.datetime.now().replace(microsecond=0).isoformat().replace(":",'.'))
             self.rate_limit = rate_limit
+            self.togbq = params['togbq'] or False
+            if self.togbq:
+                self.bq_credential = params['bq_credential']
+                self.bq_table_id = params['bq_table_id']
 
             # posts/search endpoint
             if self.endpoint == "posts/search":
@@ -513,6 +518,7 @@ class CrowdTangle(API):
     def run(self):
         self.prevStartDate = None
         self.runTimeframes()
+        append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
 
     def runTimeframes(self):
         if self.endpoint == "posts/search":

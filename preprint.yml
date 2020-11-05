@@ -1,0 +1,16 @@
+## set to null for any param that's not required for your search
+## search parameters
+token: "dgWAs1oNHtBfjnnwyVhasQx0OyMGDexjDTXnoFFK"                                          #[string][default: ""][REQUIRED] <API Token could be acquired from your dashboard>
+endpoint: "links"                           #[default: "links"]
+start_date : null                                  #[string][default: null] e.g."2020-02-02"
+end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
+output_filename: "preprint.csv"                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
+offset: 0                                          #[int][default: 0] 
+log: true                                          #[boolean][default: false]
+links: ["https://www.theguardian.com/commentisfree/2020/feb/08/misinformation-coronavirus-contagious-infections",
+"https://www.wired.com/story/to-beat-covid-19-scientists-try-to-see-the-invisible-enemy/",
+"https://www.biorxiv.org/content/10.1101/2020.03.02.972927v1#xref-fn-1-1",
+"https://www.biorxiv.org/content/10.1101/2020.01.30.927871v1"]                                 #[string][default: ""]  e.g. "abc.net.au"
+togbq: true
+bq_credential: "dmrc-data-26d311ddd0bf.json"
+bq_table_id: "crowdtangle.preprint"
