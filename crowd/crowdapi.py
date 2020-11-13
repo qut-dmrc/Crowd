@@ -10,6 +10,7 @@ from backports.datetime_fromisoformat import MonkeyPatch
 
 from .exceptions import *
 from .togbq import *
+from .fields import output_fields, output_history_fields
 
 
 class API:
@@ -114,100 +115,19 @@ class API:
 
 
 class CrowdTangle(API):
-    '''
-    The rate limit of CT refreshes at the beginnning of every minute, not on 60-second sliding window.
-    E.g. For rate limit of 2 requests/minute, When you request successfully at 16:11:56 and 16:11:59, 
+    """
+    The rate limit of CT refreshes at the beginning of every minute, not on 60-second sliding window.
+    E.g. For rate limit of 2 requests/minute, When you request successfully at 16:11:56 and 16:11:59,
     you are able to make another two requests at 16:12:00, 16:12:05, despite them being in the same 60-second window
-    '''
+    """
     def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
         self.read_config(config)
         # 56 columns when includeHistory = False
-        self.fieldnames = [ "platformId", 
-                            "platform", 
-                            "date", 
-                            "updated", 
-                            "type", 
-                            "title", #
-                            "caption", #
-                            "description", # 
-                            "message", 
-                            "expandedLinksOriginal",
-                            "expandedLinksExpanded",
-                            "link",
-                            "postUrl",
-                            "subscriberCount",
-                            "score",
-                            "mediaType",
-                            "mediaUrl",
-                            "mediaHeight",
-                            "mediaWidth",
-                            "mediaFull",
-                            "actualLikeCount",
-                            "actualShareCoount",
-                            "actualCommentCount",
-                            "actualLoveCount",
-                            "actualWowcount",
-                            "actualHahaCount",
-                            "actualSadCount",
-                            "actualAngryCount",
-                            "actualThankfulCount",
-                            "actualCareCount",
-                            "expectedLikeCount",
-                            "expectedShareCoount",
-                            "expectedCommentCount",
-                            "expectedLoveCount",
-                            "expectedWowcount",
-                            "expectedHahaCount",
-                            "expectedSadCount",
-                            "expectedAngryCount",
-                            "expectedThankfulCount",
-                            "expectedCareCount",
-                            "accountId",
-                            "accountName",
-                            "accountHandle",
-                            "accountProfileImage",
-                            "accountSubscriberCount",
-                            "accountUrl",
-                            "accountPlatform",
-                            "accountPlatformId",
-                            "accountAccountType",
-                            "accountPageAdminTopCountry", #
-                            "accountVerified",
-                            "imageText", #
-                            "videoLengthMS", #
-                            "liveVideoStatus", #
-                            "newId",
-                            "id"]
+        self.fieldnames = output_fields
         if self.history:
             # 79 columns when includeHistory = True
-
-            self.fieldnames = self.fieldnames + \
-                              [
-                                  "historyActualTimestep",
-                                  "historyActualDate",
-                                  "historyActualScore",
-                                  "historyActualLikeCount",
-                                  "historyActualShareCoount",
-                                  "historyActualCommentCount",
-                                  "historyActualLoveCount",
-                                  "historyActualWowcount",
-                                  "historyActualHahaCount",
-                                  "historyActualSadCount",
-                                  "historyActualAngryCount",
-                                  "historyActualThankfulCount",
-                                  "historyActualCareCount",
-                                  "historyExpectedLikeCount",
-                                  "historyExpectedShareCoount",
-                                  "historyExpectedCommentCount",
-                                  "historyExpectedLoveCount",
-                                  "historyExpectedWowcount",
-                                  "historyExpectedHahaCount",
-                                  "historyExpectedSadCount",
-                                  "historyExpectedAngryCount",
-                                  "historyExpectedThankfulCount",
-                                  "historyExpectedCareCount"
-                              ]
+            self.fieldnames = self.fieldnames + output_history_fields
         if not append:
             # write header once
             print("writing header")
