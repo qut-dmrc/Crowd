@@ -11,3 +11,7 @@ lists: null                                        #[string][default:null] e.g. 
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
 offset: 0                                          #[int][default: 0] 
 log: true                                          #[boolean][default: false]
+history: false                                     #[boolean][default: false] 
+togbq: true                                        #[booelan][deafult: true]                                  
+bq_credential: "xxx.json"                          #service account credential file
+bq_table_id: "dataset_id.table_id "                #dataset_id.table_id on BQ                       

@@ -107,20 +107,22 @@ class API:
             # Allows for the api to ignore one potentially bad request
             if not self.failed_last:
                 self.failed_last = True
-                raise ApiError(e)
+                return None;
+                # raise ApiError(e)
             else:
                 raise FatalApiError(e)
 
 
 class CrowdTangle(API):
     '''
-    The rate limit of CT refreshes at the beginnning of every minute, not on 60-second slide window.
-    E.g. For rate limit of 2 requests/minute, When you request successfully at 16:11:56, 16:11:59, 
-    you are able to make another two requests at 16:12:00, 16:12:05, despite them being in the 60-second window
+    The rate limit of CT refreshes at the beginnning of every minute, not on 60-second sliding window.
+    E.g. For rate limit of 2 requests/minute, When you request successfully at 16:11:56 and 16:11:59, 
+    you are able to make another two requests at 16:12:00, 16:12:05, despite them being in the same 60-second window
     '''
     def __init__(self, config):
         self.url = "https://api.crowdtangle.com"
         self.read_config(config)
+        # 56 columns when includeHistory = False
         self.fieldnames = [ "platformId", 
                             "platform", 
                             "date", 
@@ -177,7 +179,8 @@ class CrowdTangle(API):
                             "liveVideoStatus", #
                             "newId",
                             "id"]
-        if self.endpoint == 'post' and self.history:
+        if self.history:
+            # 79 columns when includeHistory = True
             self.fieldnames = self.fieldnames + \
                 [
                     "historyActualTimestep",
@@ -208,6 +211,7 @@ class CrowdTangle(API):
         with open(self.output_filename, 'w', encoding='utf-8', errors='ignore', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.fieldnames)
+        self.earliestStartDate = None
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
@@ -222,6 +226,7 @@ class CrowdTangle(API):
             self.output_filename = params['output_filename'] or \
                 "{}.csv".format(datetime.datetime.now().replace(microsecond=0).isoformat().replace(":",'.'))
             self.rate_limit = rate_limit
+            self.history = params['history'] or False
             self.togbq = params['togbq'] or False
             if self.togbq:
                 self.bq_credential = params['bq_credential']
@@ -233,7 +238,7 @@ class CrowdTangle(API):
                 self.search_terms = params['search_terms'] or ""
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
-                self.history = params['history'] or False
+                
                 self.offset = params['offset'] or 0
                 self.start_date = params['start_date']
                 self.end_date = params['end_date'] or datetime.datetime.now().isoformat()
@@ -316,11 +321,11 @@ class CrowdTangle(API):
 
     ## The largest margin between startDate and endDate must be less than one year.
     ##TODO timeframe must be sql interval format
-    def linksEndpoint(self, link, count=100, include_history=None, include_summary=None,
+    def linksEndpoint(self, link, count=1000, include_history=None, include_summary=None,
                 end_date=None, offset=0, platforms=None, search_field=None,
                 sort_by="date",start_date=None, **params):
 
-        count = 100 if count > 100 else count
+        count = 1000 if count > 1000 else count
         parameters = {"link": link,
                       "count": count,
                       "endDate": end_date,
@@ -441,7 +446,7 @@ class CrowdTangle(API):
         row.append(post['liveVideoStatus']) if 'liveVideoStatus' in post else row.append("")
         row.append(post['newId']) if 'newId' in post else row.append("")
         row.append(post['id']) if 'id' in post else row.append("")
-        if self.endpoint == 'post' and self.history:
+        if self.history:
             if 'history' in post and isinstance(post['history'],list):
                 timestep = [timestamp['timestep'] if 'timestep' in timestamp else "" for timestamp in post['history']]
                 date = [timestamp['date'] if 'date' in timestamp else "" for timestamp in post['history']]
@@ -517,10 +522,15 @@ class CrowdTangle(API):
 
     def run(self):
         self.prevStartDate = None
-        self.runTimeframes()
+        if self.endpoint == "links":
+            for i in range(len(self.links)):
+                self.link_end_date = self.end_date
+                self.runTimeframes(self.links[i])
+        else:
+            self.runTimeframes()
         append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
 
-    def runTimeframes(self):
+    def runTimeframes(self, link=None):
         if self.endpoint == "posts/search":
             timeFrames = self.getTimeframeList(self.start_date, self.end_date)
             for timeframe in timeFrames:
@@ -536,10 +546,21 @@ class CrowdTangle(API):
                 self.end_date = self.earliestStartDate
                 self.runTimeframes()
         elif self.endpoint == "links":
-            for i in range(len(self.links)):
-                self.log_function("Retrieving link {}".format(self.links[i]))
-                res = self.linksEndpoint(link=self.links[i], start_date=self.start_date.isoformat(), end_date=self.end_date.isoformat(), offset=self.offset)
+            timeFrames = self.getTimeframeList(self.start_date, self.link_end_date)
+            for timeframe in timeFrames:
+                start = timeframe[0]
+                end = timeframe[1]
+                self.log_function("Retrieving link {} from {} to {}".format(link, start, end))
+                res = self.linksEndpoint(link=link, start_date=self.start, \
+                    end_date=end, offset=self.offset, include_history=self.history)
                 self.processResponse(res)
+            if self.earliestStartDate and \
+                    self.earliestStartDate > self.start_date and \
+                    self.earliestStartDate != self.prevStartDate:
+                self.prevStartDate = self.earliestStartDate
+                self.link_end_date = self.earliestStartDate
+                # print(self.link_end_date)
+                self.runTimeframes(link) # TODO! Wrong, always start from the first l
         elif self.endpoint == "post":
             self.processResponse()
         else:
@@ -555,6 +576,8 @@ class CrowdTangle(API):
                     result =  res['result']['posts'][0]
                     nodes.append(self.flatten(result))
             self.writeDataToCSV(nodes)
+        elif not res:
+            return None
         else:
             if res['result'] and res['result']['posts']:
                 data = [self.flatten(datum) for datum in res['result']['posts']]
@@ -564,9 +587,13 @@ class CrowdTangle(API):
                     # nextpage without searchTerm will throw API error
                     if self.endpoint == "posts/search":
                         nextPage = nextPage + "&searchTerm=" if not self.search_terms or self.search_terms == "" else nextPage
-                    res = self.get(nextPage,"").json()
-                    data = [self.flatten(datum) for datum in res['result']['posts']]
-                    self.writeDataToCSV(data)
+                    res = self.get(nextPage,"")
+                    if res:
+                        res = res.json()
+                        data = [self.flatten(datum) for datum in res['result']['posts']]
+                        self.writeDataToCSV(data)
+                    else:
+                        return None
     
     def writeDataToCSV(self,data):
         with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
