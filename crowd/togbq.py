@@ -1,6 +1,7 @@
 from google.cloud import bigquery
 import os
 
+
 def append_to_bq(credentials, table_id, csv_file):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials
     # Construct a BigQuery client object.
