@@ -658,7 +658,7 @@ class CrowdTangle(API):
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving link {} from {} to {}".format(link, start, end))
-                res = self.linksEndpoint(link=link, start_date=self.start, \
+                res = self.linksEndpoint(link=link, start_date=start, \
                     end_date=end, offset=self.offset, include_history=self.history)
                 self.processResponse(res)
             if self.earliestStartDate and \
