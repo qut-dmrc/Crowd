@@ -119,7 +119,7 @@ class CrowdTangle(API):
     E.g. For rate limit of 2 requests/minute, When you request successfully at 16:11:56 and 16:11:59, 
     you are able to make another two requests at 16:12:00, 16:12:05, despite them being in the same 60-second window
     '''
-    def __init__(self, config):
+    def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
         self.read_config(config)
         # 56 columns when includeHistory = False
@@ -208,12 +208,14 @@ class CrowdTangle(API):
                                   "historyExpectedThankfulCount",
                                   "historyExpectedCareCount"
                               ]
-        # write header once
-        with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
-                  newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(self.fieldnames)
-        self.earliestStartDate = None
+        if not append:
+            # write header once
+            print("writing header")
+            with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
+                    newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(self.fieldnames)
+            self.earliestStartDate = None
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
@@ -294,7 +296,7 @@ class CrowdTangle(API):
                    in_list_ids=None, language=None,
                    min_interactions=0, min_subscriber_count=0, not_in_account_ids=None,
                    not_in_list_ids=None, not_in_title=None,
-                   offset=0, page_admin_top_country=None, platforms=None,
+                   offset=0, page_admin_top_country=None, platforms="facebook",
                    search_field="text_fields_and_image_text",
                    sort_by="date", start_date=None, timeframe=None, types=None,
                    verified="no_filter", verified_only=False,
@@ -336,7 +338,7 @@ class CrowdTangle(API):
     # The largest margin between startDate and endDate must be less than one year.
     # TODO timeframe must be sql interval format
     def linksEndpoint(self, link, count=100, include_history=None, include_summary=None,
-                      end_date=None, offset=0, platforms=None, search_field=None,
+                      end_date=None, offset=0, platforms="facebook", search_field=None,
                       sort_by="date", start_date=None, **params):
 
         count = 1000 if count > 1000 else count
