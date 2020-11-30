@@ -2,12 +2,14 @@
 ## search parameters
 token: ""                                          #[string][default: ""][REQUIRED] <API Token could be acquired from your dashboard>
 endpoint: "links"                           #[default: "links"]
-start_date : null                                  #[string][default: null] e.g."2020-02-02"
-end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
-output_filename: "preprint.csv"                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
+start_date : "2011-01-01"                                  #[string][default: null] e.g."2020-02-02"
+end_date: "2020-05-21"                                     #[string][default: datetime.NOW] e.g."2020-02-02"
+output_filename: "links.csv"                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
 offset: 0                                          #[int][default: 0] 
-log: true                                          #[boolean][default: false]
-links: ["https://www.theguardian.com/commentisfree/2020/feb/08/misinformation-coronavirus-contagious-infections",
-"https://www.wired.com/story/to-beat-covid-19-scientists-try-to-see-the-invisible-enemy/",
-"https://www.biorxiv.org/content/10.1101/2020.03.02.972927v1#xref-fn-1-1",
-"https://www.biorxiv.org/content/10.1101/2020.01.30.927871v1"]                                 #[string][default: ""]  e.g. "abc.net.au"
+log: True
+history: False
+togbq: False
+bq_credential: "xxx.json"           # credential json file
+bq_table_id: "dateset.table_id"   # dataset_id.table_id                                          #[boolean][default: false]
+links: [
+"theconverstation.com"]                                 #[string][default: ""]  e.g. "abc.net.au"
