@@ -210,7 +210,6 @@ class CrowdTangle(API):
                               ]
         if not append:
             # write header once
-            print("writing header")
             with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
                     newline='') as f:
                 writer = csv.writer(f)
@@ -289,6 +288,7 @@ class CrowdTangle(API):
             return req.json()
 
     # The largest margin between startDate and endDate must be less than one year.
+    # end_date and start_date are string in iso format
     # TODO timeframe must be sql interval format
     def postSearch(self, search_term, count=100, account_types=None, and_kw=None,
                    not_kw=None, branded_content="no_filter",
@@ -336,8 +336,9 @@ class CrowdTangle(API):
         return self.api_call("posts/search", parameters)
 
     # The largest margin between startDate and endDate must be less than one year.
+    # end_date and start_date are string in iso format
     # TODO timeframe must be sql interval format
-    def linksEndpoint(self, link, count=100, include_history=None, include_summary=None,
+    def linksEndpoint(self, link, count=1000, include_history=None, include_summary=None,
                       end_date=None, offset=0, platforms="facebook", search_field=None,
                       sort_by="date", start_date=None, **params):
 
@@ -370,6 +371,9 @@ class CrowdTangle(API):
     def getTimeframeList(startDate, endDate):
         """
         split timeframe into a list of timeframes with each is of maximum one year margin
+        startDate: type: datetime
+        endDate: type: datetime
+        return: timelist - list of list of string
         """
         timeList = []
         while (endDate - startDate).days >= 365:
@@ -631,45 +635,36 @@ class CrowdTangle(API):
         if self.endpoint == "links":
             for i in range(len(self.links)):
                 self.link_end_date = self.end_date
-                self.runTimeframes(self.links[i])
+                self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
         else:
-            self.runTimeframes()
+            self.runTimeframes(self.start_date, self.end_date)
         append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
 
-    def runTimeframes(self, link=None):
-        if self.endpoint == "posts/search":
-            timeFrames = self.getTimeframeList(self.start_date, self.end_date)
+    def runTimeframes(self, start_date, end_date, link=None):
+        if self.endpoint == "posts/search" or self.endpoint == "links":
+            timeFrames = self.getTimeframeList(start_date, end_date)
             for timeframe in timeFrames:
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
-                res = self.postSearch(search_term=self.search_terms,
-                                      and_kw=self.and_terms, \
-                                      not_kw=self.not_terms, inListIds=self.inListIds,
-                                      start_date=start, \
-                                      end_date=end, offset=self.offset,
-                                      include_history=self.history)
+                if self.endpoint == "posts/search":
+                    res = self.postSearch(search_term=self.search_terms,
+                                        and_kw=self.and_terms, \
+                                        not_kw=self.not_terms, inListIds=self.inListIds,
+                                        start_date=start, \
+                                        end_date=end, offset=self.offset,
+                                        include_history=self.history)
+                if self.endpoint == "links":
+                    res = self.linksEndpoint(link,include_history=self.history,\
+                                                end_date=end, start_date=start, \
+                                                offset= self.offset)
                 self.processResponse(res)
-            if self.earliestStartDate > self.start_date and self.earliestStartDate != self.prevStartDate:
-                self.prevStartDate = self.earliestStartDate
-                self.end_date = self.earliestStartDate
-                self.runTimeframes()
-        elif self.endpoint == "links":
-            timeFrames = self.getTimeframeList(self.start_date, self.link_end_date)
-            for timeframe in timeFrames:
-                start = timeframe[0]
-                end = timeframe[1]
-                self.log_function("Retrieving link {} from {} to {}".format(link, start, end))
-                res = self.linksEndpoint(link=link, start_date=start, \
-                    end_date=end, offset=self.offset, include_history=self.history)
-                self.processResponse(res)
-            if self.earliestStartDate and \
-                    self.earliestStartDate > self.start_date and \
-                    self.earliestStartDate != self.prevStartDate:
-                self.prevStartDate = self.earliestStartDate
-                self.link_end_date = self.earliestStartDate
-                # print(self.link_end_date)
-                self.runTimeframes(link) # TODO! Wrong, always start from the first l
+                start = datetime.datetime.fromisoformat(start)
+                if self.earliestStartDate and self.earliestStartDate > start and self.earliestStartDate != self.prevStartDate:
+                    print("Check timeframe coverage")
+                    self.prevStartDate = self.earliestStartDate
+                    end = self.earliestStartDate
+                    self.runTimeframes(start, end, link)
         elif self.endpoint == "post":
             self.processResponse()
         else:
