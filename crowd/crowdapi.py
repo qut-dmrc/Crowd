@@ -3,14 +3,18 @@ from time import sleep
 import requests
 import logging
 import datetime
+import pytz
 import yaml
 import csv
+import sqlite3 as sql
+import pandas as pd
+import numpy as np
 
 from backports.datetime_fromisoformat import MonkeyPatch
 
 from .exceptions import *
 from .togbq import *
-
+from .fields import output_fields, output_history_fields
 
 class API:
     def __init__(self, rate_limit=None, session=None):
@@ -107,7 +111,7 @@ class API:
             # Allows for the api to ignore one potentially bad request
             if not self.failed_last:
                 self.failed_last = True
-                return None;
+                return None
                 # raise ApiError(e)
             else:
                 raise FatalApiError(e)
@@ -121,101 +125,25 @@ class CrowdTangle(API):
     '''
     def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
-        self.read_config(config)
+        self.conn = sql.connect('crowdtangle')
+        self.sqlc = self.conn.cursor()
+        self.append = append
         # 56 columns when includeHistory = False
-        self.fieldnames = [ "platformId", 
-                            "platform", 
-                            "date", 
-                            "updated", 
-                            "type", 
-                            "title", #
-                            "caption", #
-                            "description", # 
-                            "message", 
-                            "expandedLinksOriginal",
-                            "expandedLinksExpanded",
-                            "link",
-                            "postUrl",
-                            "subscriberCount",
-                            "score",
-                            "mediaType",
-                            "mediaUrl",
-                            "mediaHeight",
-                            "mediaWidth",
-                            "mediaFull",
-                            "actualLikeCount",
-                            "actualShareCoount",
-                            "actualCommentCount",
-                            "actualLoveCount",
-                            "actualWowcount",
-                            "actualHahaCount",
-                            "actualSadCount",
-                            "actualAngryCount",
-                            "actualThankfulCount",
-                            "actualCareCount",
-                            "expectedLikeCount",
-                            "expectedShareCoount",
-                            "expectedCommentCount",
-                            "expectedLoveCount",
-                            "expectedWowcount",
-                            "expectedHahaCount",
-                            "expectedSadCount",
-                            "expectedAngryCount",
-                            "expectedThankfulCount",
-                            "expectedCareCount",
-                            "accountId",
-                            "accountName",
-                            "accountHandle",
-                            "accountProfileImage",
-                            "accountSubscriberCount",
-                            "accountUrl",
-                            "accountPlatform",
-                            "accountPlatformId",
-                            "accountAccountType",
-                            "accountPageAdminTopCountry", #
-                            "accountVerified",
-                            "imageText", #
-                            "videoLengthMS", #
-                            "liveVideoStatus", #
-                            "newId",
-                            "id"]
+        self.fieldnames = output_fields
+        self.read_config(config)
+        self.jobEntryTime = pytz.utc.localize(datetime.datetime.utcnow()).isoformat()
         if self.history:
             # 79 columns when includeHistory = True
-
-            self.fieldnames = self.fieldnames + \
-                              [
-                                  "historyActualTimestep",
-                                  "historyActualDate",
-                                  "historyActualScore",
-                                  "historyActualLikeCount",
-                                  "historyActualShareCoount",
-                                  "historyActualCommentCount",
-                                  "historyActualLoveCount",
-                                  "historyActualWowcount",
-                                  "historyActualHahaCount",
-                                  "historyActualSadCount",
-                                  "historyActualAngryCount",
-                                  "historyActualThankfulCount",
-                                  "historyActualCareCount",
-                                  "historyExpectedLikeCount",
-                                  "historyExpectedShareCoount",
-                                  "historyExpectedCommentCount",
-                                  "historyExpectedLoveCount",
-                                  "historyExpectedWowcount",
-                                  "historyExpectedHahaCount",
-                                  "historyExpectedSadCount",
-                                  "historyExpectedAngryCount",
-                                  "historyExpectedThankfulCount",
-                                  "historyExpectedCareCount"
-                              ]
-        if not append:
-            # write header once
-            print("writing header")
-            with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
-                    newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(self.fieldnames)
-            self.earliestStartDate = None
+            self.fieldnames = self.fieldnames + output_history_fields
+                              
+        # if not append:
+        #     # write header once
+        #     print("writing header")
+        #     with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
+        #             newline='') as f:
+        #         writer = csv.writer(f)
+        #         writer.writerow(self.fieldnames)
+        self.earliestStartDate = None
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
@@ -230,6 +158,7 @@ class CrowdTangle(API):
             self.output_filename = params['output_filename'] or \
                                    "{}.csv".format(datetime.datetime.now().replace(
                                        microsecond=0).isoformat().replace(":", '.'))
+            self.db_table_name = self.output_filename.split('.')[0]
             self.rate_limit = rate_limit
             self.history = params['history'] or False
             self.togbq = params['togbq'] or False
@@ -271,6 +200,111 @@ class CrowdTangle(API):
                 self.start_date) if self.start_date else \
                 self.end_date - datetime.timedelta(days=365) + datetime.timedelta(
                     seconds=1)
+        self.createDBTables()
+
+    def createDBTables(self):
+        self.sqlc.execute("CREATE TABLE IF NOT EXISTS "+self.db_table_name+"("+
+                        """
+                        platformId text,
+                        platform text,
+                        date text,
+                        updated text,
+                        type text,
+                        title text,
+                        caption text,
+                        description text,
+                        message text,
+                        link text,
+                        postUrl text,
+                        subscriberCount INTEGER,
+                        score REAL,
+                        actualLikeCount INTEGER,
+                        actualShareCoount INTEGER,
+                        actualCommentCount INTEGER,
+                        actualLoveCount INTEGER,
+                        actualWowcount INTEGER,
+                        actualHahaCount INTEGER,
+                        actualSadCount INTEGER,
+                        actualAngryCount INTEGER,
+                        actualThankfulCount INTEGER,
+                        actualCareCount INTEGER,
+                        expectedLikeCount INTEGER,
+                        expectedShareCoount INTEGER,
+                        expectedCommentCount INTEGER,
+                        expectedLoveCount INTEGER,
+                        expectedWowcount INTEGER,
+                        expectedHahaCount INTEGER,
+                        expectedSadCount INTEGER,
+                        expectedAngryCount INTEGER,
+                        expectedThankfulCount INTEGER,
+                        expectedCareCount INTEGER,
+                        accountId TEXT,
+                        accountName TEXT,
+                        accountHandle TEXT,
+                        accountProfileImage TEXT,
+                        accountSubscriberCount TEXT,
+                        accountUrl TEXT,
+                        accountPlatform TEXT,
+                        accountPlatformId TEXT,
+                        accountAccountType TEXT,
+                        accountPageAdminTopCountry TEXT, 
+                        accountVerified TEXT,
+                        imageText TEXT,
+                        videoLengthMS REAL,
+                        liveVideoStatus TEXT,
+                        newId TEXT,
+                        id TEXT,
+                        _pushedToBQ INTEGER,
+                        _jobEntryDateTime TEXT
+                    )""")
+
+        self.sqlc.execute("CREATE TABLE IF NOT EXISTS "+self.db_table_name+"_media("+
+                    """mediaType TEXT,
+                    mediaUrl TEXT,
+                    mediaHeight REAL,
+                    mediaWidth REAL,
+                    mediaFull  TEXT,
+                    platformId TEXT,
+                    _pushedToBQ INTEGER,
+                    _jobEntryDateTime TEXT
+                    )""")
+
+        self.sqlc.execute("CREATE TABLE IF NOT EXISTS "+self.db_table_name+"_history("+
+                    """historyActualTimestep INTEGER,
+                    historyActualDate TEXT,
+                    historyActualScore REAL,
+                    historyActualLikeCount INTEGER,
+                    historyActualShareCoount INTEGER,
+                    historyActualCommentCount INTEGER,
+                    historyActualLoveCount INTEGER,
+                    historyActualWowcount INTEGER,
+                    historyActualHahaCount INTEGER,
+                    historyActualSadCount INTEGER,
+                    historyActualAngryCount INTEGER,
+                    historyActualThankfulCount INTEGER,
+                    historyActualCareCount INTEGER,
+                    historyExpectedLikeCount INTEGER,
+                    historyExpectedShareCoount INTEGER,
+                    historyExpectedCommentCount INTEGER,
+                    historyExpectedLoveCount INTEGER,
+                    historyExpectedWowcount INTEGER,
+                    historyExpectedHahaCount INTEGER,
+                    historyExpectedSadCount INTEGER,
+                    historyExpectedAngryCount INTEGER,
+                    historyExpectedThankfulCount INTEGER,
+                    historyExpectedCareCount INTEGER,
+                    platformId TEXT,
+                    _pushedToBQ INTEGER,
+                    _jobEntryDateTime TEXT
+                    )""")
+        self.sqlc.execute("CREATE TABLE IF NOT EXISTS "+self.db_table_name+"_expandedLinks("+
+                    """expandedLinksOriginal TEXT,
+                    expandedLinksExpanded TEXT,
+                    platformId TEXT,
+                    _pushedToBQ INTEGER,
+                    _jobEntryDateTime TEXT
+                    )""")
+        self.conn.commit()
 
     def api_call(self, edge, parameters, return_results=True):
         # if self.remaining_req <= 0:
@@ -289,7 +323,6 @@ class CrowdTangle(API):
             return req.json()
 
     # The largest margin between startDate and endDate must be less than one year.
-    # TODO timeframe must be sql interval format
     def postSearch(self, search_term, count=100, account_types=None, and_kw=None,
                    not_kw=None, branded_content="no_filter",
                    end_date=None, include_history=None, in_account_ids=None,
@@ -336,7 +369,6 @@ class CrowdTangle(API):
         return self.api_call("posts/search", parameters)
 
     # The largest margin between startDate and endDate must be less than one year.
-    # TODO timeframe must be sql interval format
     def linksEndpoint(self, link, count=100, include_history=None, include_summary=None,
                       end_date=None, offset=0, platforms="facebook", search_field=None,
                       sort_by="date", start_date=None, **params):
@@ -388,6 +420,9 @@ class CrowdTangle(API):
         :return: A flattened dictionary in list
         """
         row = []
+        expandedLinks = []
+        medias = []
+        historyCounts = []
         row.append(post['platformId']) if 'platformId' in post else row.append("")
         row.append(post['platform']) if 'platform' in post else row.append("")
         row.append(post['date']) if 'date' in post else row.append("")
@@ -398,44 +433,62 @@ class CrowdTangle(API):
         row.append(post['description']) if 'description' in post else row.append("")
         row.append(post['message']) if 'message' in post else row.append("")
         if 'expandedLinks' in post and isinstance(post['expandedLinks'], list):
-            expandedLinksOriginal = [
-                expanded['original'] if 'original' in expanded else "" for expanded in
-                post['expandedLinks']]
-            expandedLinksExpanded = [
-                expanded['expanded'] if 'expanded' in expanded else "" for expanded in
-                post['expandedLinks']]
-        else:
-            expandedLinksOriginal = ""
-            expandedLinksExpanded = ""
-        row.append(expandedLinksOriginal)
-        row.append(expandedLinksExpanded)
+            # expandedLinksOriginal = [
+            #     expanded['original'] if 'original' in expanded else "" for expanded in
+            #     post['expandedLinks']]
+            # expandedLinksExpanded = [
+            #     expanded['expanded'] if 'expanded' in expanded else "" for expanded in
+            #     post['expandedLinks']]
+            for expanded in post['expandedLinks']:
+                expandedLink = []
+                expandedLink.append(expanded['original']) if 'original' in expanded else None
+                expandedLink.append(expanded['expanded']) if 'expanded' in expanded else None
+                expandedLink.append(post['platformId'])
+                expandedLink.append(0)
+                expandedLink.append(str(self.jobEntryTime))
+                expandedLinks.append(tuple(expandedLink))
+        # else:
+        #     expandedLinksOriginal = ""
+        #     expandedLinksExpanded = ""
+        # row.append(expandedLinksOriginal)
+        # row.append(expandedLinksExpanded)
         row.append(post['link']) if 'link' in post else row.append("")
         row.append(post['postUrl']) if 'postUrl' in post else row.append("")
-        row.append(
-            post['subscriberCount']) if 'subscriberCount' in post else row.append("")
+        row.append(post['subscriberCount']) if 'subscriberCount' in post else row.append("")
         row.append(post['score']) if 'score' in post else row.append("")
         if 'media' in post and isinstance(post['media'], list):
-            mediaType = [media['type'] if 'type' in media else "" for media in
-                         post['media']]
-            mediaUrl = [media['url'] if 'url' in media else "" for media in
-                        post['media']]
-            mediaHeight = [media['height'] if 'height' in media else "" for media in
-                           post['media']]
-            mediaWidth = [media['width'] if 'width' in media else "" for media in
-                          post['media']]
-            mediaFull = [media['full'] if 'full' in media else "" for media in
-                         post['media']]
-        else:
-            mediaType = ""
-            mediaUrl = ""
-            mediaHeight = ""
-            mediaWidth = ""
-            mediaFull = ""
-        row.append(mediaType)
-        row.append(mediaUrl)
-        row.append(mediaHeight)
-        row.append(mediaWidth)
-        row.append(mediaFull)
+            # mediaType = [media['type'] if 'type' in media else "" for media in
+            #              post['media']]
+            # mediaUrl = [media['url'] if 'url' in media else "" for media in
+            #             post['media']]
+            # mediaHeight = [media['height'] if 'height' in media else "" for media in
+            #                post['media']]
+            # mediaWidth = [media['width'] if 'width' in media else "" for media in
+            #               post['media']]
+            # mediaFull = [media['full'] if 'full' in media else "" for media in
+            #              post['media']]
+            for media in post['media']:
+                mediaTuple = []
+                mediaTuple.append(media['type']) if 'type' in media else ""
+                mediaTuple.append(media['url']) if 'url' in media else ""
+                mediaTuple.append(media['height']) if 'height' in media else ""
+                mediaTuple.append(media['width']) if 'width' in media else ""
+                mediaTuple.append(media['full']) if 'full' in media else ""
+                mediaTuple.append(post['platformId'])
+                mediaTuple.append(0)
+                mediaTuple.append(str(self.jobEntryTime))
+                medias.append(tuple(mediaTuple))
+        # else:
+        #     mediaType = ""
+        #     mediaUrl = ""
+        #     mediaHeight = ""
+        #     mediaWidth = ""
+        #     mediaFull = ""
+        # row.append(mediaType)
+        # row.append(mediaUrl)
+        # row.append(mediaHeight)
+        # row.append(mediaWidth)
+        # row.append(mediaFull)
         row.append(post['statistics']['actual']['likeCount']) if 'likeCount' in \
                                                                  post['statistics'][
                                                                      'actual'] else row.append(
@@ -551,80 +604,112 @@ class CrowdTangle(API):
             post['liveVideoStatus']) if 'liveVideoStatus' in post else row.append("")
         row.append(post['newId']) if 'newId' in post else row.append("")
         row.append(post['id']) if 'id' in post else row.append("")
+        row.append(0)
+        row.append(str(self.jobEntryTime))
         if self.history:
             if 'history' in post and isinstance(post['history'],list):
-                timestep = [timestamp['timestep'] if 'timestep' in timestamp else "" for timestamp in post['history']]
-                date = [timestamp['date'] if 'date' in timestamp else "" for timestamp in post['history']]
-                score = [timestamp['score'] if 'score' in timestamp else "" for timestamp in post['history']]
-                historyActualLikeCount = [timestamp['actual']['likeCount'] if 'likeCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualShareCount = [timestamp['actual']['shareCount'] if 'shareCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualCommentCount = [timestamp['actual']['commentCount'] if 'commentCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualLoveCount = [timestamp['actual']['loveCount'] if 'loveCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualWowCount = [timestamp['actual']['wowCount'] if 'wowCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualHahaCount = [timestamp['actual']['hahaCount'] if 'hahaCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualSadCount = [timestamp['actual']['sadCount'] if 'sadCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualAngryCount = [timestamp['actual']['angryCount'] if 'angryCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualThankfulCount = [timestamp['actual']['thankfulCount'] if 'thankfulCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualCareCount = [timestamp['actual']['careCount'] if 'careCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyExpectedLikeCount = [timestamp['expected']['likeCount'] if 'likeCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedShareCount = [timestamp['expected']['shareCount'] if 'shareCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedCommentCount = [timestamp['expected']['commentCount'] if 'commentCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedLoveCount = [timestamp['expected']['loveCount'] if 'loveCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedWowCount = [timestamp['expected']['wowCount'] if 'wowCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedHahaCount = [timestamp['expected']['hahaCount'] if 'hahaCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedSadCount = [timestamp['expected']['sadCount'] if 'sadCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedAngryCount = [timestamp['expected']['angryCount'] if 'angryCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedThankfulCount = [timestamp['expected']['thankfulCount'] if 'thankfulCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedCareCount = [timestamp['expected']['careCount'] if 'careCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+                 for timestamp in post['history']:
+                    history = []
+                    history.append(timestamp['timestep']) if 'timestep' in timestamp else ""
+                    history.append(timestamp['date']) if 'date' in timestamp else ""
+                    history.append(timestamp['score']) if 'score' in timestamp else ""
+                    history.append(timestamp['actual']['likeCount']) if 'likeCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['shareCount']) if 'shareCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['commentCount']) if 'commentCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['loveCount']) if 'loveCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['wowCount']) if 'wowCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['hahaCount']) if 'hahaCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['sadCount']) if 'sadCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['angryCount']) if 'angryCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['thankfulCount']) if 'thankfulCount' in timestamp['actual'] else ""
+                    history.append(timestamp['actual']['careCount']) if 'careCount' in timestamp['actual'] else ""
+                    history.append(timestamp['expected']['likeCount']) if 'likeCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['shareCount']) if 'shareCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['commentCount']) if 'commentCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['loveCount']) if 'loveCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['wowCount']) if 'wowCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['hahaCount']) if 'hahaCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['sadCount']) if 'sadCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['angryCount']) if 'angryCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['thankfulCount']) if 'thankfulCount' in timestamp['expected'] else ""
+                    history.append(timestamp['expected']['careCount']) if 'careCount' in timestamp['expected'] else ""
+                    history.append(post['platformId'])
+                    history.append(0)
+                    history.append(str(self.jobEntryTime))
+                    historyCounts.append(tuple(history))
+            #     timestep = [timestamp['timestep'] if 'timestep' in timestamp else "" for timestamp in post['history']]
+            #     date = [timestamp['date'] if 'date' in timestamp else "" for timestamp in post['history']]
+            #     score = [timestamp['score'] if 'score' in timestamp else "" for timestamp in post['history']]
+            #     historyActualLikeCount = [timestamp['actual']['likeCount'] if 'likeCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualShareCount = [timestamp['actual']['shareCount'] if 'shareCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualCommentCount = [timestamp['actual']['commentCount'] if 'commentCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualLoveCount = [timestamp['actual']['loveCount'] if 'loveCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualWowCount = [timestamp['actual']['wowCount'] if 'wowCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualHahaCount = [timestamp['actual']['hahaCount'] if 'hahaCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualSadCount = [timestamp['actual']['sadCount'] if 'sadCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualAngryCount = [timestamp['actual']['angryCount'] if 'angryCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualThankfulCount = [timestamp['actual']['thankfulCount'] if 'thankfulCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyActualCareCount = [timestamp['actual']['careCount'] if 'careCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedLikeCount = [timestamp['expected']['likeCount'] if 'likeCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedShareCount = [timestamp['expected']['shareCount'] if 'shareCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedCommentCount = [timestamp['expected']['commentCount'] if 'commentCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedLoveCount = [timestamp['expected']['loveCount'] if 'loveCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedWowCount = [timestamp['expected']['wowCount'] if 'wowCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedHahaCount = [timestamp['expected']['hahaCount'] if 'hahaCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedSadCount = [timestamp['expected']['sadCount'] if 'sadCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedAngryCount = [timestamp['expected']['angryCount'] if 'angryCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedThankfulCount = [timestamp['expected']['thankfulCount'] if 'thankfulCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+            #     historyExpectedCareCount = [timestamp['expected']['careCount'] if 'careCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
 
-            else:
-                timestep = ""
-                date = ""
-                score = ""
-                historyActualLikeCount = ""
-                historyActualShareCount = ""
-                historyActualCommentCount = ""
-                historyActualLoveCount = ""
-                historyActualWowCount = ""
-                historyActualHahaCount = ""
-                historyActualSadCount = ""
-                historyActualAngryCount = ""
-                historyActualThankfulCount = ""
-                historyActualCareCount = ""
-                historyExpectedLikeCount = ""
-                historyExpectedShareCount = ""
-                historyExpectedCommentCount = ""
-                historyExpectedLoveCount = ""
-                historyExpectedWowCount = ""
-                historyExpectedHahaCount = ""
-                historyExpectedSadCount = ""
-                historyExpectedAngryCount = ""
-                historyExpectedThankfulCount = ""
-                historyExpectedCareCount = ""
-            row.append(timestep)
-            row.append(date)
-            row.append(score)
-            row.append(historyActualLikeCount)
-            row.append(historyActualShareCount)
-            row.append(historyActualCommentCount)
-            row.append(historyActualLoveCount)
-            row.append(historyActualWowCount)
-            row.append(historyActualHahaCount)
-            row.append(historyActualSadCount)
-            row.append(historyActualAngryCount)
-            row.append(historyActualThankfulCount)
-            row.append(historyActualCareCount)
-            row.append(historyExpectedLikeCount)
-            row.append(historyExpectedShareCount)
-            row.append(historyExpectedCommentCount)
-            row.append(historyExpectedLoveCount)
-            row.append(historyExpectedWowCount)
-            row.append(historyExpectedHahaCount)
-            row.append(historyExpectedSadCount)
-            row.append(historyExpectedAngryCount)
-            row.append(historyExpectedThankfulCount)
-            row.append(historyExpectedCareCount)
-        return row
+            # else:
+            #     timestep = ""
+            #     date = ""
+            #     score = ""
+            #     historyActualLikeCount = ""
+            #     historyActualShareCount = ""
+            #     historyActualCommentCount = ""
+            #     historyActualLoveCount = ""
+            #     historyActualWowCount = ""
+            #     historyActualHahaCount = ""
+            #     historyActualSadCount = ""
+            #     historyActualAngryCount = ""
+            #     historyActualThankfulCount = ""
+            #     historyActualCareCount = ""
+            #     historyExpectedLikeCount = ""
+            #     historyExpectedShareCount = ""
+            #     historyExpectedCommentCount = ""
+            #     historyExpectedLoveCount = ""
+            #     historyExpectedWowCount = ""
+            #     historyExpectedHahaCount = ""
+            #     historyExpectedSadCount = ""
+            #     historyExpectedAngryCount = ""
+            #     historyExpectedThankfulCount = ""
+            #     historyExpectedCareCount = ""
+            # row.append(timestep)
+            # row.append(date)
+            # row.append(score)
+            # row.append(historyActualLikeCount)
+            # row.append(historyActualShareCount)
+            # row.append(historyActualCommentCount)
+            # row.append(historyActualLoveCount)
+            # row.append(historyActualWowCount)
+            # row.append(historyActualHahaCount)
+            # row.append(historyActualSadCount)
+            # row.append(historyActualAngryCount)
+            # row.append(historyActualThankfulCount)
+            # row.append(historyActualCareCount)
+            # row.append(historyExpectedLikeCount)
+            # row.append(historyExpectedShareCount)
+            # row.append(historyExpectedCommentCount)
+            # row.append(historyExpectedLoveCount)
+            # row.append(historyExpectedWowCount)
+            # row.append(historyExpectedHahaCount)
+            # row.append(historyExpectedSadCount)
+            # row.append(historyExpectedAngryCount)
+            # row.append(historyExpectedThankfulCount)
+            # row.append(historyExpectedCareCount)
+        row = tuple(row)
+        return row,expandedLinks,medias,historyCounts
 
     def run(self):
         self.prevStartDate = None
@@ -634,6 +719,7 @@ class CrowdTangle(API):
                 self.runTimeframes(self.links[i])
         else:
             self.runTimeframes()
+        self.writeDataToCSV(self.jobEntryTime)
         append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
 
     def runTimeframes(self, link=None):
@@ -677,20 +763,33 @@ class CrowdTangle(API):
 
     def processResponse(self, res=None):
         if self.endpoint == "post":
-            nodes = []
+            # nodes = []
             for _id in self.ids:
                 self.log_function("Retrieving post {}".format(_id))
                 res = self.post(_id, include_history=self.history)
                 if res['result'] and res['result']['posts']:
                     result = res['result']['posts'][0]
-                    nodes.append(self.flatten(result))
-            self.writeDataToCSV(nodes)
+                    row,expandedLinks,medias,historyCounts = self.flatten(result)
+                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
+                    self.conn.commit()
+                    # nodes.append(self.flatten(result))
+            # self.writeDataToCSV(nodes)
         elif not res:
             return None
         else:
             if res['result'] and res['result']['posts']:
-                data = [self.flatten(datum) for datum in res['result']['posts']]
-                self.writeDataToCSV(data)
+                # data = [self.flatten(datum) for datum in res['result']['posts']]
+                # self.writeDataToCSV(data)
+                for datum in res['result']['posts']:
+                    row,expandedLinks,medias,historyCounts = self.flatten(datum)
+                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
+                    self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
+                    self.conn.commit()
                 while 'nextPage' in res['result']['pagination']:
                     nextPage = res['result']['pagination']['nextPage']
                     # nextpage without searchTerm will throw API error
@@ -699,13 +798,47 @@ class CrowdTangle(API):
                     res = self.get(nextPage,"")
                     if res:
                         res = res.json()
-                        data = [self.flatten(datum) for datum in res['result']['posts']]
-                        self.writeDataToCSV(data)
+                        # data = [self.flatten(datum) for datum in res['result']['posts']]
+                        for datum in res['result']['posts']:
+                            row,expandedLinks,medias,historyCounts = self.flatten(datum)
+                            self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
+                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
+                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
+                            self.conn.commit()
+                            # self.writeDataToCSV(data)
                     else:
                         return None
     
-    def writeDataToCSV(self,data):
-        with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerows(data)
-            self.earliestStartDate = datetime.datetime.fromisoformat(data[-1][2])  # 2 is the position of date
+    def writeDataToCSV(self, job_id):
+        '''
+        job_id: datetime when the job was created
+        '''
+        df = pd.read_sql_query("SELECT * FROM "+self.db_table_name+" WHERE _jobEntryDateTime=\""+job_id+"\"", self.conn)
+        df_media = pd.read_sql_query("SELECT * FROM "+self.db_table_name+"_media WHERE _jobEntryDateTime=\""+job_id+"\"", self.conn)
+        df_expandedLinks = pd.read_sql_query("SELECT * FROM "+self.db_table_name+"_expandedLinks WHERE _jobEntryDateTime=\""+job_id+"\"", self.conn)
+        df_history = pd.read_sql_query("SELECT * FROM "+self.db_table_name+"_history WHERE _jobEntryDateTime=\""+job_id+"\"", self.conn) if self.history else None
+
+        # filter job related columns
+        df = df[df.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
+        df_media = df_media[df_media.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
+        df_expandedLinks = df_expandedLinks[df_expandedLinks.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
+        df_history = df_history[df_history.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
+
+        # store to csv
+        mode = 'w'
+        header = True
+        if self.append:
+            mode = 'a'
+            header = False
+        df.to_csv(self.db_table_name+".csv",mode=mode, index=False, header=header)
+        df_media.to_csv(self.db_table_name+"_media.csv",mode=mode, index=False, header=header)
+        df_expandedLinks.to_csv(self.db_table_name+"_expandedLinks.csv",mode=mode, index=False, header=header)
+        df_history.to_csv(self.db_table_name+"_history.csv",mode=mode, index=False, header=header)
+
+        # with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
+        #     writer = csv.writer(f)
+        #     writer.writerows(data)
+        #     self.earliestStartDate = datetime.datetime.fromisoformat(data[-1][2])  # 2 is the position of date
+
+
