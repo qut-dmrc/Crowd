@@ -243,20 +243,21 @@ class CrowdTangle(API):
                         accountName TEXT,
                         accountHandle TEXT,
                         accountProfileImage TEXT,
-                        accountSubscriberCount TEXT,
+                        accountSubscriberCount INTEGER,
                         accountUrl TEXT,
                         accountPlatform TEXT,
                         accountPlatformId TEXT,
                         accountAccountType TEXT,
                         accountPageAdminTopCountry TEXT, 
-                        accountVerified TEXT,
+                        accountVerified INTEGER,
                         imageText TEXT,
                         videoLengthMS REAL,
                         liveVideoStatus TEXT,
                         newId TEXT,
                         id TEXT,
                         _pushedToBQ INTEGER,
-                        _jobEntryDateTime TEXT
+                        _jobEntryDateTime TEXT,
+                        _searchTermLink TEXT
                     )""")
 
         self.sqlc.execute("CREATE TABLE IF NOT EXISTS "+self.db_table_name+"_media("+
@@ -324,7 +325,7 @@ class CrowdTangle(API):
             return req.json()
 
     # The largest margin between startDate and endDate must be less than one year.
-    # end_date and start_date are string in iso format
+    # end_date and start_date need to be string in iso format
     def postSearch(self, search_term, count=100, account_types=None, and_kw=None,
                    not_kw=None, branded_content="no_filter",
                    end_date=None, include_history=None, in_account_ids=None,
@@ -371,8 +372,8 @@ class CrowdTangle(API):
         return self.api_call("posts/search", parameters)
 
     # The largest margin between startDate and endDate must be less than one year.
+    # end_date and start_date need to be string in iso format
     def linksEndpoint(self, link, count=1000, include_history=None, include_summary=None,
-    # end_date and start_date are string in iso format
                       end_date=None, offset=0, platforms="facebook", search_field=None,
                       sort_by="date", start_date=None, **params):
 
@@ -418,7 +419,7 @@ class CrowdTangle(API):
         timeList.append([startDate.isoformat(), endDate.isoformat()])
         return timeList
 
-    def flatten(self, post):
+    def flatten(self, post, _link=None):
         """
         Turn a nested dictionary into a flattened list
 
@@ -434,10 +435,10 @@ class CrowdTangle(API):
         row.append(post['date']) if 'date' in post else row.append("")
         row.append(post['updated']) if 'updated' in post else row.append("")
         row.append(post['type']) if 'type' in post else row.append("")
-        row.append(post['title']) if 'title' in post else row.append("")
-        row.append(post['caption']) if 'caption' in post else row.append("")
-        row.append(post['description']) if 'description' in post else row.append("")
-        row.append(post['message']) if 'message' in post else row.append("")
+        row.append(post['title'].replace("'","`")) if 'title' in post else row.append("")
+        row.append(post['caption'].replace("'","`")) if 'caption' in post else row.append("")
+        row.append(post['description'].replace("'","`")) if 'description' in post else row.append("")
+        row.append(post['message'].replace("'","`")) if 'message' in post else row.append("")
         if 'expandedLinks' in post and isinstance(post['expandedLinks'], list):
             # expandedLinksOriginal = [
             #     expanded['original'] if 'original' in expanded else "" for expanded in
@@ -447,8 +448,8 @@ class CrowdTangle(API):
             #     post['expandedLinks']]
             for expanded in post['expandedLinks']:
                 expandedLink = []
-                expandedLink.append(expanded['original']) if 'original' in expanded else None
-                expandedLink.append(expanded['expanded']) if 'expanded' in expanded else None
+                expandedLink.append(expanded['original'].replace("'","`")) if 'original' in expanded else expandedLink.append("")
+                expandedLink.append(expanded['expanded'].replace("'","`")) if 'expanded' in expanded else expandedLink.append("")
                 expandedLink.append(post['platformId'])
                 expandedLink.append(0)
                 expandedLink.append(str(self.jobEntryTime))
@@ -458,8 +459,8 @@ class CrowdTangle(API):
         #     expandedLinksExpanded = ""
         # row.append(expandedLinksOriginal)
         # row.append(expandedLinksExpanded)
-        row.append(post['link']) if 'link' in post else row.append("")
-        row.append(post['postUrl']) if 'postUrl' in post else row.append("")
+        row.append(post['link'].replace("'","`")) if 'link' in post else row.append("")
+        row.append(post['postUrl'].replace("'","`")) if 'postUrl' in post else row.append("")
         row.append(post['subscriberCount']) if 'subscriberCount' in post else row.append("")
         row.append(post['score']) if 'score' in post else row.append("")
         if 'media' in post and isinstance(post['media'], list):
@@ -475,11 +476,11 @@ class CrowdTangle(API):
             #              post['media']]
             for media in post['media']:
                 mediaTuple = []
-                mediaTuple.append(media['type']) if 'type' in media else ""
-                mediaTuple.append(media['url']) if 'url' in media else ""
-                mediaTuple.append(media['height']) if 'height' in media else ""
-                mediaTuple.append(media['width']) if 'width' in media else ""
-                mediaTuple.append(media['full']) if 'full' in media else ""
+                mediaTuple.append(media['type']) if 'type' in media else mediaTuple.append("")
+                mediaTuple.append(media['url'].replace("'","`")) if 'url' in media else mediaTuple.append("")
+                mediaTuple.append(media['height']) if 'height' in media else mediaTuple.append("")
+                mediaTuple.append(media['width']) if 'width' in media else mediaTuple.append("")
+                mediaTuple.append(media['full'].replace("'","`")) if 'full' in media else mediaTuple.append("")
                 mediaTuple.append(post['platformId'])
                 mediaTuple.append(0)
                 mediaTuple.append(str(self.jobEntryTime))
@@ -579,17 +580,17 @@ class CrowdTangle(API):
             "")
         row.append(post['account']['id']) if 'account' in post and 'id' in post[
             'account'] else row.append("")
-        row.append(post['account']['name']) if 'account' in post and 'name' in post[
+        row.append(post['account']['name'].replace("'","`")) if 'account' in post and 'name' in post[
             'account'] else row.append("")
-        row.append(post['account']['handle']) if 'account' in post and 'handle' in post[
+        row.append(post['account']['handle'].replace("'","`")) if 'account' in post and 'handle' in post[
             'account'] else row.append("")
         row.append(
-            post['account']['profileImage']) if 'account' in post and 'profileImage' in \
+            post['account']['profileImage'].replace("'","`")) if 'account' in post and 'profileImage' in \
                                                 post['account'] else row.append("")
         row.append(post['account'][
                        'subscriberCount']) if 'account' in post and 'subscriberCount' in \
                                               post['account'] else row.append("")
-        row.append(post['account']['url']) if 'account' in post and 'url' in post[
+        row.append(post['account']['url'].replace("'","`")) if 'account' in post and 'url' in post[
             'account'] else row.append("")
         row.append(post['account']['platform']) if 'account' in post and 'platform' in \
                                                    post['account'] else row.append("")
@@ -604,7 +605,7 @@ class CrowdTangle(API):
                                                   post['account'] else row.append("")
         row.append(post['account']['verified']) if 'account' in post and 'verified' in \
                                                    post['account'] else row.append("")
-        row.append(post['imageText']) if 'imageText' in post else row.append("")
+        row.append(post['imageText'].replace("'","`")) if 'imageText' in post else row.append("")
         row.append(post['videoLengthMS']) if 'videoLengthMS' in post else row.append("")
         row.append(
             post['liveVideoStatus']) if 'liveVideoStatus' in post else row.append("")
@@ -612,33 +613,34 @@ class CrowdTangle(API):
         row.append(post['id']) if 'id' in post else row.append("")
         row.append(0)
         row.append(str(self.jobEntryTime))
+        row.append(_link) if self.endpoint == "links" else row.append("")
         if self.history:
             if 'history' in post and isinstance(post['history'],list):
                  for timestamp in post['history']:
                     history = []
-                    history.append(timestamp['timestep']) if 'timestep' in timestamp else ""
-                    history.append(timestamp['date']) if 'date' in timestamp else ""
-                    history.append(timestamp['score']) if 'score' in timestamp else ""
-                    history.append(timestamp['actual']['likeCount']) if 'likeCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['shareCount']) if 'shareCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['commentCount']) if 'commentCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['loveCount']) if 'loveCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['wowCount']) if 'wowCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['hahaCount']) if 'hahaCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['sadCount']) if 'sadCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['angryCount']) if 'angryCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['thankfulCount']) if 'thankfulCount' in timestamp['actual'] else ""
-                    history.append(timestamp['actual']['careCount']) if 'careCount' in timestamp['actual'] else ""
-                    history.append(timestamp['expected']['likeCount']) if 'likeCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['shareCount']) if 'shareCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['commentCount']) if 'commentCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['loveCount']) if 'loveCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['wowCount']) if 'wowCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['hahaCount']) if 'hahaCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['sadCount']) if 'sadCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['angryCount']) if 'angryCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['thankfulCount']) if 'thankfulCount' in timestamp['expected'] else ""
-                    history.append(timestamp['expected']['careCount']) if 'careCount' in timestamp['expected'] else ""
+                    history.append(timestamp['timestep']) if 'timestep' in timestamp else history.append("")
+                    history.append(timestamp['date']) if 'date' in timestamp else history.append("")
+                    history.append(timestamp['score']) if 'score' in timestamp else history.append("")
+                    history.append(timestamp['actual']['likeCount']) if 'likeCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['shareCount']) if 'shareCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['commentCount']) if 'commentCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['loveCount']) if 'loveCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['wowCount']) if 'wowCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['hahaCount']) if 'hahaCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['sadCount']) if 'sadCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['angryCount']) if 'angryCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['thankfulCount']) if 'thankfulCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['actual']['careCount']) if 'careCount' in timestamp['actual'] else history.append("")
+                    history.append(timestamp['expected']['likeCount']) if 'likeCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['shareCount']) if 'shareCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['commentCount']) if 'commentCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['loveCount']) if 'loveCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['wowCount']) if 'wowCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['hahaCount']) if 'hahaCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['sadCount']) if 'sadCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['angryCount']) if 'angryCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['thankfulCount']) if 'thankfulCount' in timestamp['expected'] else history.append("")
+                    history.append(timestamp['expected']['careCount']) if 'careCount' in timestamp['expected'] else history.append("")
                     history.append(post['platformId'])
                     history.append(0)
                     history.append(str(self.jobEntryTime))
@@ -715,18 +717,25 @@ class CrowdTangle(API):
             # row.append(historyExpectedThankfulCount)
             # row.append(historyExpectedCareCount)
         row = tuple(row)
+        self.earliestStartDate = datetime.datetime.fromisoformat(post['date'])
         return row,expandedLinks,medias,historyCounts
 
     def run(self):
         self.prevStartDate = None
         if self.endpoint == "links":
             for i in range(len(self.links)):
+                self.prevStartDate = None
                 self.link_end_date = self.end_date
                 self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
         else:
             self.runTimeframes(self.start_date, self.end_date)
         self.writeDataToCSV(self.jobEntryTime)
-        append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
+        if self.togbq:
+            append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name, self.db_table_name+".csv")
+            append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_expanded_links", self.db_table_name+"_expandedLinks.csv")
+            append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_media", self.db_table_name+"_media.csv")
+            if self.history:
+                append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_history", self.db_table_name+"_history.csv")
 
     def runTimeframes(self, start_date, end_date, link=None):
         if self.endpoint == "posts/search" or self.endpoint == "links":
@@ -746,8 +755,9 @@ class CrowdTangle(API):
                     res = self.linksEndpoint(link,include_history=self.history,\
                                                 end_date=end, start_date=start, \
                                                 offset= self.offset)
-                self.processResponse(res)
+                self.processResponse(res, link)
                 start = datetime.datetime.fromisoformat(start)
+                # print(self.earliestStartDate, start, self.prevStartDate)
                 if self.earliestStartDate and self.earliestStartDate > start and self.earliestStartDate != self.prevStartDate:
                     print("Check timeframe coverage")
                     self.prevStartDate = self.earliestStartDate
@@ -758,7 +768,7 @@ class CrowdTangle(API):
         else:
             pass
 
-    def processResponse(self, res=None):
+    def processResponse(self, res=None, _link=None):
         if self.endpoint == "post":
             # nodes = []
             for _id in self.ids:
@@ -767,7 +777,8 @@ class CrowdTangle(API):
                 if res['result'] and res['result']['posts']:
                     result = res['result']['posts'][0]
                     row,expandedLinks,medias,historyCounts = self.flatten(result)
-                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                    row = str(row).replace('"','\\\"')
+                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+row)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
@@ -781,8 +792,10 @@ class CrowdTangle(API):
                 # data = [self.flatten(datum) for datum in res['result']['posts']]
                 # self.writeDataToCSV(data)
                 for datum in res['result']['posts']:
-                    row,expandedLinks,medias,historyCounts = self.flatten(datum)
-                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                    row,expandedLinks,medias,historyCounts = self.flatten(datum, _link)
+                    row = str(row).replace('"','\\\"')
+                    # print("INSERT INTO "+self.db_table_name+" VALUES"+row)
+                    self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+row)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
                     self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
@@ -797,8 +810,9 @@ class CrowdTangle(API):
                         res = res.json()
                         # data = [self.flatten(datum) for datum in res['result']['posts']]
                         for datum in res['result']['posts']:
-                            row,expandedLinks,medias,historyCounts = self.flatten(datum)
-                            self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+str(row))
+                            row,expandedLinks,medias,historyCounts = self.flatten(datum, _link)
+                            row = str(row).replace('"','\\\"')
+                            self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+row)
                             self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
                             self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
                             self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
@@ -817,10 +831,10 @@ class CrowdTangle(API):
         df_history = pd.read_sql_query("SELECT * FROM "+self.db_table_name+"_history WHERE _jobEntryDateTime=\""+job_id+"\"", self.conn) if self.history else None
 
         # filter job related columns
-        df = df[df.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
-        df_media = df_media[df_media.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
-        df_expandedLinks = df_expandedLinks[df_expandedLinks.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
-        df_history = df_history[df_history.columns.difference(['_pushedToBQ','jobEntryDateTime'])]
+        df = df[df.columns.difference(['_pushedToBQ','_jobEntryDateTime','_searchTermLink'])]
+        df_media = df_media[df_media.columns.difference(['_pushedToBQ','_jobEntryDateTime','_searchTermLink'])]
+        df_expandedLinks = df_expandedLinks[df_expandedLinks.columns.difference(['_pushedToBQ','_jobEntryDateTime','_searchTermLink'])]
+        df_history = df_history[df_history.columns.difference(['_pushedToBQ','_jobEntryDateTime','_searchTermLink'])]
 
         # store to csv
         mode = 'w'
