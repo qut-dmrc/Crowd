@@ -26,16 +26,28 @@ cd Crowd
 pip install -r requirements.txt
 ```
 - Edit the config file(.yml) for your query, different example yaml files are provided for different endpoints
+  * Get the API access token from the dashboard setting and paste it in token
+  * Set the history to True if you like to include the counts of emoji interactions over different timestep
+  * Set togbq to True if you like to push your data to Bigquery
+  * Store the credential file in the Crowd folder, and set the bq_credential to <your_credential_file>.json
+  * Set your search terms or links and the rest of configuaration accordingly to your query.
+- Build the CLI `pip install -e .`
+- Run the CLI tool to gather your data using the commands in Usage section.
+
+### Using Crowd Subsequently
+- Activate the environment `conda activate <your_env_name>`
+- [Optional] If you like to have separate tables for list data in BigQuery `git checkout tableflattening` 
+- [Optional] Run it every time there is a new change to the code `pip install -e .`
+- Edit the yaml file for your query. 
+- `crowd -c <your_config>.yml`
+
+### Install New Release of the Code
 ```
-Get the API access token from the dashboard setting and paste it in token
-Set the history to True if you like to include the counts of emoji interactions over different timestep
-Set togbq to True if you like to push your data to Bigquery
-Store the credential file in the Crowd folder, and set the bq_credential to <your_credential_file>.json
-Set your search terms or links
+git stash
+git pull
+git stash pop
 ```
-- Build the CLI
-`pip install -e .`
-- Run the CLI tool to gather your data using the commands below
+Follow the steps in # Using Crowd Subsequently # to use the tool. 
 
 ## Usage
 
