@@ -340,7 +340,7 @@ class CrowdTangle(API):
 
         parameters = self.merge_params(parameters, params)
 
-        return self.api_call("posts", parameters)
+        return self.api_call("posts/search", parameters)
 
         # The largest margin between startDate and endDate must be less than one year.
     # end_date and start_date are string in iso format
