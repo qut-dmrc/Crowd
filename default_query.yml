@@ -8,6 +8,7 @@ NOT_terms: null                                    #[string][default: ""]  e.g. 
 start_date : null                                  #[string][default: null] e.g."2020-02-02"
 end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
 lists: null                                        #[string][default:null] e.g. "123,456"
+accounts: null                                     #[string][defaultLnull] e.g. "123,456"
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
 offset: 0                                          #[int][default: 0] 
 log: true                                          #[boolean][default: false]
