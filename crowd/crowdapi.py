@@ -5,6 +5,10 @@ import logging
 import datetime
 import yaml
 import csv
+import concurrent.futures
+from PIL import Image
+from io import BytesIO
+
 
 from backports.datetime_fromisoformat import MonkeyPatch
 
@@ -230,6 +234,7 @@ class CrowdTangle(API):
                                    "{}.csv".format(datetime.datetime.now().replace(
                                        microsecond=0).isoformat().replace(":", '.'))
             self.rate_limit = rate_limit
+            self.downloadImages = params['downloadImages']
             self.history = params['history'] or False
             self.togbq = params['togbq'] or False
             if self.togbq:
@@ -475,6 +480,7 @@ class CrowdTangle(API):
                          post['media']]
             mediaUrl = [media['url'] if 'url' in media else "" for media in
                         post['media']]
+            self.downloadImageFromURL(mediaUrl,self.output_filename.split(".")[0])
             mediaHeight = [media['height'] if 'height' in media else "" for media in
                            post['media']]
             mediaWidth = [media['width'] if 'width' in media else "" for media in
@@ -777,3 +783,21 @@ class CrowdTangle(API):
             writer = csv.writer(f)
             writer.writerows(data)
             self.earliestStartDate = datetime.datetime.fromisoformat(data[-1][2])  # 2 is the position of date
+
+    '''
+    Images is a nunpy array of urls of which the images are stored
+    '''
+    def downloadImageFromURL(self, images, dest_folder):
+        if not os.path.isdir(dest_folder): 
+            os.mkdir(dest_folder) # create folder
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for url in images:
+                executor.submit(self.load_url, url, dest_folder)
+
+    def load_url(self, url, img_folder):
+        response = requests.get(url)
+        filename = url.split('/')[-1].split("?")[0]
+        if response:
+            img = Image.open(BytesIO(response.content))
+            img.save(os.path.join(img_folder,filename))
+
