@@ -237,9 +237,8 @@ class CrowdTangle(API):
                 self.bq_table_id = params['bq_table_id']
 
             # posts/search endpoint
-            if self.endpoint == "posts/search":
+            if self.endpoint == "posts/search" or self.endpoint == "posts":
                 self.lists = params['lists']
-                self.accounts = params['accounts']
                 self.search_terms = params['search_terms'] or ""
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
@@ -297,7 +296,7 @@ class CrowdTangle(API):
                    in_list_ids=None, language=None,
                    min_interactions=0, min_subscriber_count=0, not_in_account_ids=None,
                    not_in_list_ids=None, not_in_title=None,
-                   offset=0, page_admin_top_country=None, platforms="instagram",
+                   offset=0, page_admin_top_country=None, platforms="facebook",
                    search_field="text_fields_and_image_text",
                    sort_by="date", start_date=None, timeframe=None, types=None,
                    verified="no_filter", verified_only=False,
@@ -335,7 +334,57 @@ class CrowdTangle(API):
 
         parameters = self.merge_params(parameters, params)
 
-        return self.api_call("posts/search", parameters)
+        return self.api_call("posts", parameters)
+
+        # The largest margin between startDate and endDate must be less than one year.
+    # end_date and start_date are string in iso format
+    # TODO timeframe must be sql interval format
+    def posts(self, search_term, count=100, accounts=None, account_types=None,
+                    and_kw=None, not_kw=None, branded_content="no_filter",
+                   end_date=None, include_history=None, in_account_ids=None,
+                   in_list_ids=None, language=None,
+                   min_interactions=0, min_subscriber_count=0, not_in_account_ids=None,
+                   not_in_list_ids=None, not_in_title=None,
+                   offset=0, page_admin_top_country=None, platforms="facebook",
+                   search_field="text_fields_and_image_text",
+                   sort_by="date", start_date=None, timeframe=None, types=None,
+                   verified="no_filter", verified_only=False,
+                   **params):
+
+        count = 100 if count > 100 else count
+        parameters = {"searchTerm": search_term,
+                      "count": count,
+                      "accounts": accounts,
+                      "accountTypes": account_types,
+                      "and": and_kw,
+                      "not": not_kw,
+                      "brandedContent": branded_content,
+                      "endDate": end_date,
+                      "includeHistory": include_history,
+                      "inAccountIds": in_account_ids,
+                    #   "inListIds": in_list_ids,
+                      "listIds": in_list_ids,
+                      "language": language,
+                      "minInteractions": min_interactions,
+                    #   "minSubscriberCount": min_subscriber_count,
+                      "notInAccountIds": not_in_account_ids,
+                      "notInListIds": not_in_list_ids,
+                      "notInTitle": not_in_title,
+                      "offset": offset,
+                      "pageAdminTopCountry": page_admin_top_country,
+                    #   "platforms": platforms,
+                      "searchField": search_field,
+                      "sortBy": sort_by,
+                      "startDate": start_date,
+                      "timeframe": timeframe,
+                      "types": types,
+                      "verified": verified,
+                    #   "verifiedOnly": verified_only,
+                      "token": self.key}
+
+        parameters = self.merge_params(parameters, params)
+
+        return self.api_call("posts", parameters)
 
     # The largest margin between startDate and endDate must be less than one year.
     # end_date and start_date are string in iso format
@@ -641,9 +690,9 @@ class CrowdTangle(API):
         else:
             self.runTimeframes(self.start_date, self.end_date)
         append_to_bq(self.bq_credential, self.bq_table_id, self.output_filename) if self.togbq else None
-
+ 
     def runTimeframes(self, start_date, end_date, link=None):
-        if self.endpoint == "posts/search" or self.endpoint == "links":
+        if self.endpoint == "posts/search" or self.endpoint == "posts" or self.endpoint == "links":
             timeFrames = self.getTimeframeList(start_date, end_date)
             for timeframe in timeFrames:
                 start = timeframe[0]
@@ -660,7 +709,17 @@ class CrowdTangle(API):
                     self.accountIds = self.accounts
                     res = self.postSearch(search_term=self.search_terms,
                                         and_kw=self.and_terms, \
-                                        not_kw=self.not_terms, inListIds=self.inListIds,
+                                        not_kw=self.not_terms, in_list_ids=self.inListIds,
+                                        accounts=self.accountIds,
+                                        start_date=start, \
+                                        end_date=end, offset=self.offset,
+                                        include_history=self.history)
+                    self.processResponse(res)
+                if self.endpoint == "posts":
+                    self.accountIds = self.accounts
+                    res = self.posts(search_term=self.search_terms,
+                                        and_kw=self.and_terms, \
+                                        not_kw=self.not_terms, in_list_ids=self.inListIds,
                                         accounts=self.accountIds,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
@@ -701,7 +760,7 @@ class CrowdTangle(API):
                 while 'nextPage' in res['result']['pagination']:
                     nextPage = res['result']['pagination']['nextPage']
                     # nextpage without searchTerm will throw API error
-                    if self.endpoint == "posts/search":
+                    if self.endpoint == "posts/search" or self.endpoint == "posts":
                         nextPage = nextPage + "&searchTerm=" if not self.search_terms or self.search_terms == "" else nextPage
                         nextPage = nextPage + "&accounts=" + self.accountIds if self.accounts else nextPage
                     res = self.get(nextPage,"")
