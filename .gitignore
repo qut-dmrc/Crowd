@@ -139,3 +139,7 @@ dmypy.json
 
 # output file
 *.csv
+
+/metadata/*
+
+test.rest
