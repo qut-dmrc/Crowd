@@ -651,20 +651,21 @@ class CrowdTangle(API):
                 self.log_function("Retrieving from {} to {}".format(start, end))
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
-                    self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
-                    chucksize = 100
-                    loop = int(len(self.accounts)/chucksize)+1
-                    for i in range(loop):
+                    # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
+                    # chucksize = 100
+                    # loop = int(len(self.accounts)/chucksize)+1
+                    # for i in range(loop):
                         # print(",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))]))
-                        self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
-                        res = self.postSearch(search_term=self.search_terms,
-                                            and_kw=self.and_terms, \
-                                            not_kw=self.not_terms, inListIds=self.inListIds,
-                                            accounts=self.accountIds,
-                                            start_date=start, \
-                                            end_date=end, offset=self.offset,
-                                            include_history=self.history)
-                        self.processResponse(res)
+                        # self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
+                    self.accountIds = None
+                    res = self.postSearch(search_term=self.search_terms,
+                                        and_kw=self.and_terms, \
+                                        not_kw=self.not_terms, inListIds=self.inListIds,
+                                        accounts=self.accountIds,
+                                        start_date=start, \
+                                        end_date=end, offset=self.offset,
+                                        include_history=self.history)
+                    self.processResponse(res)
                 if self.endpoint == "links":
                     res = self.linksEndpoint(link,include_history=self.history,\
                                                 end_date=end, start_date=start, \
