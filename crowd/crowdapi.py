@@ -239,10 +239,11 @@ class CrowdTangle(API):
             # posts/search endpoint
             if self.endpoint == "posts/search":
                 self.lists = params['lists']
+                self.accounts = params['accounts']
                 self.search_terms = params['search_terms'] or ""
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
-                
+                self.accounts = params['accounts'] or None
                 self.offset = params['offset'] or 0
                 self.start_date = params['start_date']
                 self.end_date = params[
@@ -290,13 +291,13 @@ class CrowdTangle(API):
     # The largest margin between startDate and endDate must be less than one year.
     # end_date and start_date are string in iso format
     # TODO timeframe must be sql interval format
-    def postSearch(self, search_term, count=100, account_types=None, and_kw=None,
-                   not_kw=None, branded_content="no_filter",
+    def postSearch(self, search_term, count=100, accounts=None, account_types=None,
+                    and_kw=None, not_kw=None, branded_content="no_filter",
                    end_date=None, include_history=None, in_account_ids=None,
                    in_list_ids=None, language=None,
                    min_interactions=0, min_subscriber_count=0, not_in_account_ids=None,
                    not_in_list_ids=None, not_in_title=None,
-                   offset=0, page_admin_top_country=None, platforms="facebook",
+                   offset=0, page_admin_top_country=None, platforms="instagram",
                    search_field="text_fields_and_image_text",
                    sort_by="date", start_date=None, timeframe=None, types=None,
                    verified="no_filter", verified_only=False,
@@ -305,6 +306,7 @@ class CrowdTangle(API):
         count = 100 if count > 100 else count
         parameters = {"searchTerm": search_term,
                       "count": count,
+                      "accounts": accounts,
                       "accountTypes": account_types,
                       "and": and_kw,
                       "not": not_kw,
@@ -648,17 +650,27 @@ class CrowdTangle(API):
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
                 if self.endpoint == "posts/search":
+                    ## break huge account ids into chucks
+                    # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
+                    # chucksize = 100
+                    # loop = int(len(self.accounts)/chucksize)+1
+                    # for i in range(loop):
+                        # print(",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))]))
+                        # self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
+                    self.accountIds = self.accounts
                     res = self.postSearch(search_term=self.search_terms,
                                         and_kw=self.and_terms, \
                                         not_kw=self.not_terms, inListIds=self.inListIds,
+                                        accounts=self.accountIds,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
                                         include_history=self.history)
+                    self.processResponse(res)
                 if self.endpoint == "links":
                     res = self.linksEndpoint(link,include_history=self.history,\
                                                 end_date=end, start_date=start, \
                                                 offset= self.offset)
-                self.processResponse(res)
+                    self.processResponse(res)
                 start = datetime.datetime.fromisoformat(start)
                 if self.earliestStartDate and self.earliestStartDate > start and self.earliestStartDate != self.prevStartDate:
                     print("Check timeframe coverage")
@@ -691,6 +703,7 @@ class CrowdTangle(API):
                     # nextpage without searchTerm will throw API error
                     if self.endpoint == "posts/search":
                         nextPage = nextPage + "&searchTerm=" if not self.search_terms or self.search_terms == "" else nextPage
+                        nextPage = nextPage + "&accounts=" + self.accountIds if self.accounts else nextPage
                     res = self.get(nextPage,"")
                     if res:
                         res = res.json()
