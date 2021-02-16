@@ -126,7 +126,7 @@ class CrowdTangle(API):
     def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
         self.read_config(config)
-        # 56 columns when includeHistory = False
+        # 40 columns when includeHistory = False
         self.fieldnames = [ "platformId", 
                             "platform", 
                             "date", 
@@ -148,25 +148,9 @@ class CrowdTangle(API):
                             "mediaWidth",
                             "mediaFull",
                             "actualLikeCount",
-                            "actualShareCoount",
                             "actualCommentCount",
-                            "actualLoveCount",
-                            "actualWowcount",
-                            "actualHahaCount",
-                            "actualSadCount",
-                            "actualAngryCount",
-                            "actualThankfulCount",
-                            "actualCareCount",
                             "expectedLikeCount",
-                            "expectedShareCoount",
                             "expectedCommentCount",
-                            "expectedLoveCount",
-                            "expectedWowcount",
-                            "expectedHahaCount",
-                            "expectedSadCount",
-                            "expectedAngryCount",
-                            "expectedThankfulCount",
-                            "expectedCareCount",
                             "accountId",
                             "accountName",
                             "accountHandle",
@@ -175,8 +159,6 @@ class CrowdTangle(API):
                             "accountUrl",
                             "accountPlatform",
                             "accountPlatformId",
-                            "accountAccountType",
-                            "accountPageAdminTopCountry", #
                             "accountVerified",
                             "imageText", #
                             "videoLengthMS", #
@@ -184,7 +166,7 @@ class CrowdTangle(API):
                             "newId",
                             "id"]
         if self.history:
-            # 79 columns when includeHistory = True
+            # 47 columns when includeHistory = True
 
             self.fieldnames = self.fieldnames + \
                               [
@@ -192,25 +174,9 @@ class CrowdTangle(API):
                                   "historyActualDate",
                                   "historyActualScore",
                                   "historyActualLikeCount",
-                                  "historyActualShareCoount",
                                   "historyActualCommentCount",
-                                  "historyActualLoveCount",
-                                  "historyActualWowcount",
-                                  "historyActualHahaCount",
-                                  "historyActualSadCount",
-                                  "historyActualAngryCount",
-                                  "historyActualThankfulCount",
-                                  "historyActualCareCount",
                                   "historyExpectedLikeCount",
-                                  "historyExpectedShareCoount",
-                                  "historyExpectedCommentCount",
-                                  "historyExpectedLoveCount",
-                                  "historyExpectedWowcount",
-                                  "historyExpectedHahaCount",
-                                  "historyExpectedSadCount",
-                                  "historyExpectedAngryCount",
-                                  "historyExpectedThankfulCount",
-                                  "historyExpectedCareCount"
+                                  "historyExpectedCommentCount"
                               ]
         if not append:
             # write header once
@@ -480,7 +446,8 @@ class CrowdTangle(API):
                          post['media']]
             mediaUrl = [media['url'] if 'url' in media else "" for media in
                         post['media']]
-            self.downloadImageFromURL(mediaUrl,self.output_filename.split(".")[0])
+            if self.downloadImages:
+                self.downloadImageFromURL(mediaUrl,self.output_filename.split(".")[0])
             mediaHeight = [media['height'] if 'height' in media else "" for media in
                            post['media']]
             mediaWidth = [media['width'] if 'width' in media else "" for media in
@@ -498,87 +465,22 @@ class CrowdTangle(API):
         row.append(mediaHeight)
         row.append(mediaWidth)
         row.append(mediaFull)
-        row.append(post['statistics']['actual']['likeCount']) if 'likeCount' in \
+        row.append(post['statistics']['actual']['favoriteCount']) if 'favoriteCount' in \
                                                                  post['statistics'][
                                                                      'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['shareCount']) if 'shareCount' in \
-                                                                  post['statistics'][
-                                                                      'actual'] else row.append(
             "")
         row.append(post['statistics']['actual']['commentCount']) if 'commentCount' in \
                                                                     post['statistics'][
                                                                         'actual'] else row.append(
             "")
-        row.append(post['statistics']['actual']['loveCount']) if 'loveCount' in \
-                                                                 post['statistics'][
-                                                                     'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['wowCount']) if 'wowCount' in \
-                                                                post['statistics'][
-                                                                    'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['hahaCount']) if 'hahaCount' in \
-                                                                 post['statistics'][
-                                                                     'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['sadCount']) if 'sadCount' in \
-                                                                post['statistics'][
-                                                                    'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['angryCount']) if 'angryCount' in \
-                                                                  post['statistics'][
-                                                                      'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['thankfulCount']) if 'thankfulCount' in \
-                                                                     post['statistics'][
-                                                                         'actual'] else row.append(
-            "")
-        row.append(post['statistics']['actual']['careCount']) if 'careCount' in \
-                                                                 post['statistics'][
-                                                                     'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['likeCount']) if 'likeCount' in \
+        row.append(post['statistics']['expected']['favouriteCount']) if 'favouriteCount' in \
                                                                    post['statistics'][
                                                                        'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['shareCount']) if 'shareCount' in \
-                                                                    post['statistics'][
-                                                                        'expected'] else row.append(
             "")
         row.append(post['statistics']['expected']['commentCount']) if 'commentCount' in \
                                                                       post[
                                                                           'statistics'][
                                                                           'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['loveCount']) if 'loveCount' in \
-                                                                   post['statistics'][
-                                                                       'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['wowCount']) if 'wowCount' in \
-                                                                  post['statistics'][
-                                                                      'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['hahaCount']) if 'hahaCount' in \
-                                                                   post['statistics'][
-                                                                       'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['sadCount']) if 'sadCount' in \
-                                                                  post['statistics'][
-                                                                      'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['angryCount']) if 'angryCount' in \
-                                                                    post['statistics'][
-                                                                        'expected'] else row.append(
-            "")
-        row.append(
-            post['statistics']['expected']['thankfulCount']) if 'thankfulCount' in \
-                                                                post['statistics'][
-                                                                    'expected'] else row.append(
-            "")
-        row.append(post['statistics']['expected']['careCount']) if 'careCount' in \
-                                                                   post['statistics'][
-                                                                       'expected'] else row.append(
             "")
         row.append(post['account']['id']) if 'account' in post and 'id' in post[
             'account'] else row.append("")
@@ -599,12 +501,6 @@ class CrowdTangle(API):
         row.append(
             post['account']['platformId']) if 'account' in post and 'platformId' in \
                                               post['account'] else row.append("")
-        row.append(
-            post['account']['accountType']) if 'account' in post and 'accountType' in \
-                                               post['account'] else row.append("")
-        row.append(post['account'][
-                       'pageAdminTopCountry']) if 'account' in post and 'pageAdminTopCountry' in \
-                                                  post['account'] else row.append("")
         row.append(post['account']['verified']) if 'account' in post and 'verified' in \
                                                    post['account'] else row.append("")
         row.append(post['imageText']) if 'imageText' in post else row.append("")
@@ -618,74 +514,25 @@ class CrowdTangle(API):
                 timestep = [timestamp['timestep'] if 'timestep' in timestamp else "" for timestamp in post['history']]
                 date = [timestamp['date'] if 'date' in timestamp else "" for timestamp in post['history']]
                 score = [timestamp['score'] if 'score' in timestamp else "" for timestamp in post['history']]
-                historyActualLikeCount = [timestamp['actual']['likeCount'] if 'likeCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualShareCount = [timestamp['actual']['shareCount'] if 'shareCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
+                historyActualLikeCount = [timestamp['actual']['favoriteCount'] if 'favouriteCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
                 historyActualCommentCount = [timestamp['actual']['commentCount'] if 'commentCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualLoveCount = [timestamp['actual']['loveCount'] if 'loveCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualWowCount = [timestamp['actual']['wowCount'] if 'wowCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualHahaCount = [timestamp['actual']['hahaCount'] if 'hahaCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualSadCount = [timestamp['actual']['sadCount'] if 'sadCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualAngryCount = [timestamp['actual']['angryCount'] if 'angryCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualThankfulCount = [timestamp['actual']['thankfulCount'] if 'thankfulCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualCareCount = [timestamp['actual']['careCount'] if 'careCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyExpectedLikeCount = [timestamp['expected']['likeCount'] if 'likeCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedShareCount = [timestamp['expected']['shareCount'] if 'shareCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+                historyExpectedLikeCount = [timestamp['expected']['favouriteCount'] if 'favouriteCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
                 historyExpectedCommentCount = [timestamp['expected']['commentCount'] if 'commentCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedLoveCount = [timestamp['expected']['loveCount'] if 'loveCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedWowCount = [timestamp['expected']['wowCount'] if 'wowCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedHahaCount = [timestamp['expected']['hahaCount'] if 'hahaCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedSadCount = [timestamp['expected']['sadCount'] if 'sadCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedAngryCount = [timestamp['expected']['angryCount'] if 'angryCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedThankfulCount = [timestamp['expected']['thankfulCount'] if 'thankfulCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedCareCount = [timestamp['expected']['careCount'] if 'careCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-
             else:
                 timestep = ""
                 date = ""
                 score = ""
                 historyActualLikeCount = ""
-                historyActualShareCount = ""
                 historyActualCommentCount = ""
-                historyActualLoveCount = ""
-                historyActualWowCount = ""
-                historyActualHahaCount = ""
-                historyActualSadCount = ""
-                historyActualAngryCount = ""
-                historyActualThankfulCount = ""
-                historyActualCareCount = ""
                 historyExpectedLikeCount = ""
-                historyExpectedShareCount = ""
                 historyExpectedCommentCount = ""
-                historyExpectedLoveCount = ""
-                historyExpectedWowCount = ""
-                historyExpectedHahaCount = ""
-                historyExpectedSadCount = ""
-                historyExpectedAngryCount = ""
-                historyExpectedThankfulCount = ""
-                historyExpectedCareCount = ""
             row.append(timestep)
             row.append(date)
             row.append(score)
             row.append(historyActualLikeCount)
-            row.append(historyActualShareCount)
             row.append(historyActualCommentCount)
-            row.append(historyActualLoveCount)
-            row.append(historyActualWowCount)
-            row.append(historyActualHahaCount)
-            row.append(historyActualSadCount)
-            row.append(historyActualAngryCount)
-            row.append(historyActualThankfulCount)
-            row.append(historyActualCareCount)
             row.append(historyExpectedLikeCount)
-            row.append(historyExpectedShareCount)
             row.append(historyExpectedCommentCount)
-            row.append(historyExpectedLoveCount)
-            row.append(historyExpectedWowCount)
-            row.append(historyExpectedHahaCount)
-            row.append(historyExpectedSadCount)
-            row.append(historyExpectedAngryCount)
-            row.append(historyExpectedThankfulCount)
-            row.append(historyExpectedCareCount)
         return row
 
     def run(self):
