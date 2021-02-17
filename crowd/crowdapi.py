@@ -230,6 +230,7 @@ class CrowdTangle(API):
                                    "{}.csv".format(datetime.datetime.now().replace(
                                        microsecond=0).isoformat().replace(":", '.'))
             self.rate_limit = rate_limit
+            self.page_admin_country = params['page_admin_country'] or None
             self.history = params['history'] or False
             self.togbq = params['togbq'] or False
             if self.togbq:
@@ -239,17 +240,17 @@ class CrowdTangle(API):
             # posts/search endpoint
             if self.endpoint == "posts/search" or self.endpoint == "posts":
                 self.lists = params['lists']
-                self.accounts = params['accounts']
+                self.accounts = params['accounts'] or None
                 self.search_terms = params['search_terms'] or ""
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
-                self.accounts = params['accounts'] or None
                 self.offset = params['offset'] or 0
                 self.start_date = params['start_date']
                 self.end_date = params[
                                     'end_date'] or datetime.datetime.now().isoformat()
                 self.inListIds = self.lists.strip().replace(" ",
                                                             "") if self.lists else None
+                self.accounts = ",".join(self.accounts)
 
             if self.endpoint == "links":
                 self.links = params['links'] or []
@@ -714,6 +715,7 @@ class CrowdTangle(API):
                                         and_kw=self.and_terms, \
                                         not_kw=self.not_terms, in_list_ids=self.inListIds,
                                         accounts=self.accountIds,
+                                        page_admin_top_country=self.page_admin_country,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
                                         include_history=self.history)
@@ -724,6 +726,7 @@ class CrowdTangle(API):
                                         and_kw=self.and_terms, \
                                         not_kw=self.not_terms, in_list_ids=self.inListIds,
                                         accounts=self.accountIds,
+                                        page_admin_top_country=self.page_admin_country,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
                                         include_history=self.history)
