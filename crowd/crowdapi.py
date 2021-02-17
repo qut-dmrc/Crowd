@@ -263,6 +263,8 @@ class CrowdTangle(API):
                 self.ids = params['ids'] or ""
                 self.history = params['history'] or False
                 self.ids = self.ids.strip().replace(" ", "").split(",")
+                self.start_date= None # post endpoint is included in runTimeFrame which requires start_date and end_date
+                self.end_date= None # post endpoint is included in runTimeFrame which requires start_date and end_date
 
         # clean data
         if self.endpoint != "post":
