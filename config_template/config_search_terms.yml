@@ -9,7 +9,7 @@ search_terms: null                                 #[string][default: ""]  e.g. 
 AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 lists: null                                        #[string][default:null] e.g. "123,456"
-accounts: null                                     #[string][defaultLnull] e.g. "123,456"
+accounts: null                                     #[list][defaultLnull] e.g. ["123","456"]
 offset: 0                                          #[int][default: 0] 
 log: false                                         #[boolean][default: false]
 history: false                                     #[boolean][default: false] 
