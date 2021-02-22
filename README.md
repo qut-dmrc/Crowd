@@ -93,9 +93,8 @@ OPTIONS
   --help
 
 Examples:
-  1. crowd                                         Run the query with params set in default_query.yml
-  2. crowd -c "myquery.yml"                        Run the query with params set in "myquery.yml"
-  3. crowd -c "myquery.yml" -a                     Append to the csv file stated in myquery.yml file
+  1. crowd -c "myquery.yml"                        Run the query with params set in "myquery.yml"
+  2. crowd -c "myquery.yml" -a                     Append to the csv file stated in myquery.yml file
 
 
 Source code available at https://github.com/qut-dmrc/Crowd.git
