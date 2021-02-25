@@ -132,6 +132,7 @@ class CrowdTangle(API):
         self.fieldnames = output_fields
         self.read_config(config)
         self.jobEntryTime = pytz.utc.localize(datetime.datetime.utcnow()).isoformat()
+        print(self.jobEntryTime)
         if self.history:
             # 79 columns when includeHistory = True
             self.fieldnames = self.fieldnames + output_history_fields
@@ -784,7 +785,23 @@ class CrowdTangle(API):
                 self.link_end_date = self.end_date
                 self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
         else:
-            self.runTimeframes(self.start_date, self.end_date)
+            chucksize = 80
+            if self.accounts:
+                loop = int(len(self.accounts)/chucksize)+1 if len(self.accounts) > chucksize else 1
+                for i in range(loop):
+                    self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
+                    self.runTimeframes(self.start_date, self.end_date)
+            else:
+                self.search_term_chunks = self.search_terms.split(',')
+                if len(self.search_term_chunks) > 100:
+                    loop = int(len(self.search_term_chunks)/chucksize)+1 if len(self.search_term_chunks) > chucksize else 1
+                    for i in range(loop):
+                        self.search_terms = ",".join(self.search_term_chunks[i*chucksize:min((i+1)*chucksize,len(self.search_term_chunks))]).strip()
+                        # print(self.search_terms)
+                        self.runTimeframes(self.start_date, self.end_date)
+                else:
+                    self.runTimeframes(self.start_date, self.end_date)
+                return
         self.writeDataToCSV(self.jobEntryTime)
         if self.togbq:
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name, self.db_table_name+".csv")
@@ -836,6 +853,7 @@ class CrowdTangle(API):
                 # print(self.earliestStartDate, start, self.prevStartDate)
                 if self.earliestStartDate and self.earliestStartDate > start and self.earliestStartDate != self.prevStartDate:
                     print("Check timeframe coverage")
+                    self.offset = 0
                     self.prevStartDate = self.earliestStartDate
                     end = self.earliestStartDate
                     self.runTimeframes(start, end, link)
