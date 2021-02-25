@@ -231,7 +231,6 @@ class CrowdTangle(API):
                                    "{}.csv".format(datetime.datetime.now().replace(
                                        microsecond=0).isoformat().replace(":", '.'))
             self.rate_limit = rate_limit
-            self.page_admin_country = params['page_admin_country'] or None
             self.history = params['history'] or False
             self.togbq = params['togbq'] or False
             if self.togbq:
@@ -243,6 +242,7 @@ class CrowdTangle(API):
                 self.lists = params['lists']
                 self.accounts = params['accounts']
                 self.search_terms = params['search_terms'] or ""
+                self.page_admin_country = params['page_admin_country'] or None
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
                 self.offset = params['offset'] or 0
