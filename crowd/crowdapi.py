@@ -692,6 +692,7 @@ class CrowdTangle(API):
                 self.link_end_date = self.end_date
                 self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
         else:
+            self.accountIds=None
             if self.accounts:
                 chucksize = 100
                 loop = int(len(self.accounts)/chucksize)+1 if len(self.accounts) > chucksize else 1
