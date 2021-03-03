@@ -11,7 +11,6 @@ You must have access to the CrowdTangle dashboard, read access to Google BigQuer
 - **Git** Version control system to collaborate as well as to clone the public repos or repos with at least reading access. 
 - **Python** Python 3.8.5
 - **Anaconda** To create an environment in which all the dependencies/libraries for this CLI tool are installed.
-- **Microsoft Visual C++ >=14.0** Support for backports-datetime-fromisoformat [Follow instruction here to install](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 ### Using Crowd for the first time
 - Create conda environment, remember the name of your environment to activate it everytime you like to use this tool.
