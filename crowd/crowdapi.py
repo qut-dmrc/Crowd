@@ -766,8 +766,11 @@ class CrowdTangle(API):
                     res = self.get(nextPage,"")
                     if res:
                         res = res.json()
-                        data = [self.flatten(datum) for datum in res['result']['posts']]
-                        self.writeDataToCSV(data)
+                        if len(res['result']['posts']) > 0:
+                            data = [self.flatten(datum) for datum in res['result']['posts']]
+                            self.writeDataToCSV(data)
+                        else:
+                            return None
                     else:
                         return None
     
