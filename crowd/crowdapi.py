@@ -129,7 +129,8 @@ class CrowdTangle(API):
                             "title", #
                             "caption", #
                             "description", # 
-                            "message", 
+                            "message",
+                            "originalLink", 
                             "expandedLinksOriginal",
                             "expandedLinksExpanded",
                             "link",
@@ -453,6 +454,7 @@ class CrowdTangle(API):
         row.append(post['caption']) if 'caption' in post else row.append("")
         row.append(post['description']) if 'description' in post else row.append("")
         row.append(post['message']) if 'message' in post else row.append("")
+        row.append(str(self.currentLink)) if self.currentLink else row.append("")
         if 'expandedLinks' in post and isinstance(post['expandedLinks'], list):
             expandedLinksOriginal = [
                 expanded['original'] if 'original' in expanded else "" for expanded in
@@ -687,7 +689,8 @@ class CrowdTangle(API):
         if self.endpoint == "links":
             for i in range(len(self.links)):
                 self.link_end_date = self.end_date
-                self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
+                self.currentLink = self.links[i]
+                self.runTimeframes(self.start_date, self.link_end_date, self.currentLink)
         else:
             self.accountIds=None
             if self.accounts:
