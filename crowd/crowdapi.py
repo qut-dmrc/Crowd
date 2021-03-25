@@ -516,10 +516,10 @@ class CrowdTangle(API):
                 timestep = [timestamp['timestep'] if 'timestep' in timestamp else "" for timestamp in post['history']]
                 date = [timestamp['date'] if 'date' in timestamp else "" for timestamp in post['history']]
                 score = [timestamp['score'] if 'score' in timestamp else "" for timestamp in post['history']]
-                historyActualLikeCount = [timestamp['actual']['favoriteCount'] if 'favouriteCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyActualCommentCount = [timestamp['actual']['commentCount'] if 'commentCount' in timestamp['actual'] else row.append("") for timestamp in post['history']]
-                historyExpectedLikeCount = [timestamp['expected']['favouriteCount'] if 'favouriteCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
-                historyExpectedCommentCount = [timestamp['expected']['commentCount'] if 'commentCount' in timestamp['expected'] else row.append("") for timestamp in post['history']]
+                historyActualLikeCount = [timestamp['actual']['favoriteCount'] if 'favouriteCount' in timestamp['actual'] else "" for timestamp in post['history']]
+                historyActualCommentCount = [timestamp['actual']['commentCount'] if 'commentCount' in timestamp['actual'] else "" for timestamp in post['history']]
+                historyExpectedLikeCount = [timestamp['expected']['favouriteCount'] if 'favouriteCount' in timestamp['expected'] else "" for timestamp in post['history']]
+                historyExpectedCommentCount = [timestamp['expected']['commentCount'] if 'commentCount' in timestamp['expected'] else "" for timestamp in post['history']]
             else:
                 timestep = ""
                 date = ""
