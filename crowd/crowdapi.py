@@ -782,18 +782,18 @@ class CrowdTangle(API):
                 self.link_end_date = self.end_date
                 self.runTimeframes(self.start_date, self.link_end_date, self.links[i])
         else:
-            chucksize = 80
+            chunksize = 80
             if self.accounts:
-                loop = int(len(self.accounts)/chucksize)+1 if len(self.accounts) > chucksize else 1
+                loop = int(len(self.accounts)/chunksize)+1 if len(self.accounts) > chunksize else 1
                 for i in range(loop):
-                    self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
+                    self.accountIds = ",".join(self.accounts[i*chunksize:min((i+1)*chunksize,len(self.accounts))])
                     self.runTimeframes(self.start_date, self.end_date)
             else:
                 self.search_term_chunks = self.search_terms.split(',')
-                if len(self.search_term_chunks) > 100:
-                    loop = int(len(self.search_term_chunks)/chucksize)+1 if len(self.search_term_chunks) > chucksize else 1
+                if len(self.search_term_chunks) > chunksize:
+                    loop = int(len(self.search_term_chunks)/chunksize)+1 if len(self.search_term_chunks) > chunksize else 1
                     for i in range(loop):
-                        self.search_terms = ",".join(self.search_term_chunks[i*chucksize:min((i+1)*chucksize,len(self.search_term_chunks))]).strip()
+                        self.search_terms = ",".join(self.search_term_chunks[i*chunksize:min((i+1)*chunksize,len(self.search_term_chunks))]).strip()
                         # print(self.search_terms)
                         self.runTimeframes(self.start_date, self.end_date)
                 else:
@@ -817,11 +817,11 @@ class CrowdTangle(API):
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
                     # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
-                    # chucksize = 100
-                    # loop = int(len(self.accounts)/chucksize)+1
+                    # chunksize = 100
+                    # loop = int(len(self.accounts)/chunksize)+1
                     # for i in range(loop):
-                        # print(",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))]))
-                        # self.accountIds = ",".join(self.accounts[i*chucksize:min((i+1)*chucksize,len(self.accounts))])
+                        # print(",".join(self.accounts[i*chunksize:min((i+1)*chunksize,len(self.accounts))]))
+                        # self.accountIds = ",".join(self.accounts[i*chunksize:min((i+1)*chunksize,len(self.accounts))])
                     self.accountIds = self.accounts
                     res = self.postSearch(search_term=self.search_terms,
                                         and_kw=self.and_terms, \
@@ -901,15 +901,18 @@ class CrowdTangle(API):
                     if res:
                         res = res.json()
                         # data = [self.flatten(datum) for datum in res['result']['posts']]
-                        for datum in res['result']['posts']:
-                            row,expandedLinks,medias,historyCounts = self.flatten(datum, _link)
-                            row = str(row).replace('"','\\\"')
-                            self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+row)
-                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
-                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
-                            self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
-                            self.conn.commit()
-                            # self.writeDataToCSV(data)
+                        if len(res['result']['posts']) > 0:
+                            for datum in res['result']['posts']:
+                                row,expandedLinks,medias,historyCounts = self.flatten(datum, _link)
+                                row = str(row).replace('"','\\\"')
+                                self.sqlc.execute("INSERT INTO "+self.db_table_name+" VALUES"+row)
+                                self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_media VALUES(?,?,?,?,?,?,?,?)",medias)
+                                self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_history VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",historyCounts)
+                                self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
+                                self.conn.commit()
+                                # self.writeDataToCSV(data)
+                        else:
+                            return None
                     else:
                         return None
     
