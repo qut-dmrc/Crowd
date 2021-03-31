@@ -1,5 +1,6 @@
 from google.cloud import bigquery
 import os
+import logging
 
 
 def append_to_bq(credentials, table_id, csv_file):
@@ -28,6 +29,11 @@ def append_to_bq(credentials, table_id, csv_file):
 
     table = client.get_table(table_id)  # Make an API request.
     print(
+        "Loaded {} rows and {} columns to {}".format(
+            table.num_rows, len(table.schema), table_id
+        )
+    )
+    logging.info(
         "Loaded {} rows and {} columns to {}".format(
             table.num_rows, len(table.schema), table_id
         )
