@@ -206,12 +206,17 @@ class CrowdTangle(API):
                                   "historyExpectedThankfulCount",
                                   "historyExpectedCareCount"
                               ]
+        self.output_file = open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='')
+        self.writer = csv.writer(self.output_file)
         if not append:
             # write header once
-            with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
-                    newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(self.fieldnames)
+            # with open(self.output_filename, 'w', encoding='utf-8', errors='ignore',
+            #         newline='') as f:
+            #     writer = csv.writer(f)
+            #     writer.writerow(self.fieldnames)
+            self.writer.writerow(self.fieldnames)
+            self.output_file.flush()
+            os.fsync(self.output_file.fileno())
             self.earliestStartDate = None
         super().__init__(self.rate_limit)
 
@@ -775,7 +780,10 @@ class CrowdTangle(API):
                         return None
     
     def writeDataToCSV(self,data):
-        with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerows(data)
-            self.earliestStartDate = datetime.datetime.fromisoformat(data[-1][2])  # 2 is the position of date
+        # with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
+        #     writer = csv.writer(f)
+        #     writer.writerows(data)
+        self.writer.writerows(data)
+        self.output_file.flush()
+        os.fsync(self.output_file.fileno())
+        self.earliestStartDate = datetime.datetime.fromisoformat(data[-1][2])  # 2 is the position of date
