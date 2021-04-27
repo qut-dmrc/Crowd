@@ -5,7 +5,8 @@ endpoint: "posts/search"                           #[default: "posts/search"]
 start_date : null                                  #[string][default: null] e.g."2020-02-02"
 end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
-no_search_terms: false                             #[boolean][default: false] 
+no_search_terms: true                              #[boolean][default: true]
+language: null                                     #[string][default: null] <set the language of the posts to curate>
 search_terms: null                                 #[string][default: ""]  e.g. "abc.net.au"
 AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
