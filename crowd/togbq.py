@@ -1,5 +1,7 @@
 from google.cloud import bigquery
 import os
+import logging
+import datetime
 
 
 def append_to_bq(credentials, table_id, csv_file, schema=None):
@@ -36,5 +38,11 @@ def append_to_bq(credentials, table_id, csv_file, schema=None):
     print(
         "Loaded {} rows and {} columns to {}".format(
             table.num_rows, len(table.schema), table_id
+        )
+    )
+    logging.basicConfig(filename='info_bq.log', level=logging.INFO)
+    logging.info(
+        "{}: Loaded {} rows and {} columns to {}".format(
+            datetime.datetime.now(),table.num_rows, len(table.schema), table_id
         )
     )

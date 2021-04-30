@@ -72,7 +72,7 @@ class API:
         """
         # Safeguard the rate limit, run request only when there is quota left
         if self.remaining_req <= 0:
-            sleep_time = 60 - datetime.datetime.now().second
+            sleep_time = 3600 if self.rate_limit < 1 else (60 - datetime.datetime.now().second)
             self.log_function("New request available in %s seconds" % sleep_time)
             self._sleep(sleep_time)  # wait until the start of next minute
             self.remaining_req = self.rate_limit
@@ -123,7 +123,7 @@ class CrowdTangle(API):
     '''
     def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
-        self.conn = sql.connect('crowdtangle')
+        self.conn = sql.connect('crowdtangle_links')
         self.sqlc = self.conn.cursor()
         self.append = append
         # 56 columns when includeHistory = False
@@ -147,13 +147,14 @@ class CrowdTangle(API):
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
-        logging.basicConfig(filename='info.log', level=logging.INFO)
+        logging.basicConfig(filename='info_links.log', level=logging.INFO)
         with open(os.path.join(os.getcwd(), config)) as f:
             params = yaml.full_load(f)
             # convert params to variables       
             self.endpoint = params['endpoint']
             self.key = params['token']
             self.log = params['log'] or False
+            self.accounts = None
             self.output_filename = params['output_filename'] or \
                                    "{}.csv".format(datetime.datetime.now().replace(
                                        microsecond=0).isoformat().replace(":", '.'))
@@ -170,15 +171,19 @@ class CrowdTangle(API):
                 self.lists = params['lists']
                 self.accounts = params['accounts']
                 self.search_terms = params['search_terms'] or ""
+                self.page_admin_country = params['page_admin_country'] if 'page_admin_country' in params else None
                 self.and_terms = params['AND_terms'] or None
                 self.not_terms = params['NOT_terms'] or None
-                self.accounts = params['accounts'] or None
                 self.offset = params['offset'] or 0
                 self.start_date = params['start_date']
                 self.end_date = params[
                                     'end_date'] or datetime.datetime.now().isoformat()
                 self.inListIds = self.lists.strip().replace(" ",
                                                             "") if self.lists else None
+                self.language = None
+                if self.endpoint == "posts/search" and 'no_search_terms' in params:
+                    self.rate_limit = 50 
+                    self.language = params['language']
 
             if self.endpoint == "links":
                 self.links = params['links'] or []
@@ -806,7 +811,7 @@ class CrowdTangle(API):
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_media", self.db_table_name+"_media.csv")
             if self.history:
                 append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_history", self.db_table_name+"_history.csv")
-                
+
     def runTimeframes(self, start_date, end_date, link=None):
         if self.endpoint == "posts/search" or self.endpoint == "posts" or self.endpoint == "links":
             timeFrames = self.getTimeframeList(start_date, end_date)
@@ -814,6 +819,10 @@ class CrowdTangle(API):
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
+                if self.endpoint == "links":
+                    res = self.linksEndpoint(link,include_history=self.history,\
+                                                end_date=end, start_date=start, \
+                                                offset= self.offset)
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
                     # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
@@ -823,13 +832,16 @@ class CrowdTangle(API):
                         # print(",".join(self.accounts[i*chunksize:min((i+1)*chunksize,len(self.accounts))]))
                         # self.accountIds = ",".join(self.accounts[i*chunksize:min((i+1)*chunksize,len(self.accounts))])
                     self.accountIds = self.accounts
+
                     res = self.postSearch(search_term=self.search_terms,
-                                        and_kw=self.and_terms, \
-                                        not_kw=self.not_terms, in_list_ids=self.inListIds,
-                                        accounts=self.accountIds,
-                                        start_date=start, \
-                                        end_date=end, offset=self.offset,
-                                        include_history=self.history)
+                                            and_kw=self.and_terms, \
+                                            not_kw=self.not_terms, in_list_ids=self.inListIds,
+                                            accounts=self.accountIds,
+                                            language=self.language,
+                                            page_admin_top_country=self.page_admin_country,
+                                            start_date=start, \
+                                            end_date=end, offset=self.offset,
+                                            include_history=self.history)
                     self.processResponse(res)
                 if self.endpoint == "posts":
                     self.accountIds = self.accounts
@@ -837,9 +849,11 @@ class CrowdTangle(API):
                                         and_kw=self.and_terms, \
                                         not_kw=self.not_terms, in_list_ids=self.inListIds,
                                         accounts=self.accountIds,
+                                        page_admin_top_country=self.page_admin_country,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
                                         include_history=self.history)
+
                     self.processResponse(res)
                 if self.endpoint == "links":
                     res = self.linksEndpoint(link,include_history=self.history,\
@@ -847,7 +861,7 @@ class CrowdTangle(API):
                                                 offset= self.offset)
                     self.processResponse(res, link)
                 start = datetime.datetime.fromisoformat(start)
-                # print(self.earliestStartDate, start, self.prevStartDate)
+
                 if self.earliestStartDate and self.earliestStartDate > start and self.earliestStartDate != self.prevStartDate:
                     print("Check timeframe coverage")
                     self.offset = 0
@@ -879,7 +893,7 @@ class CrowdTangle(API):
         elif not res:
             return None
         else:
-            if res['result'] and res['result']['posts']:
+            if res['result'] and res['result']['posts'] and len(res['result']['posts']) > 0:
                 # data = [self.flatten(datum) for datum in res['result']['posts']]
                 # self.writeDataToCSV(data)
                 for datum in res['result']['posts']:
@@ -911,10 +925,13 @@ class CrowdTangle(API):
                                 self.sqlc.executemany("INSERT INTO "+self.db_table_name+"_expandedLinks VALUES(?,?,?,?,?)",expandedLinks)
                                 self.conn.commit()
                                 # self.writeDataToCSV(data)
+
                         else:
                             return None
                     else:
                         return None
+            else: 
+                return None
     
     def writeDataToCSV(self, job_id):
         '''

@@ -5,14 +5,16 @@ endpoint: "posts/search"                           #[default: "posts/search"]
 start_date : null                                  #[string][default: null] e.g."2020-02-02"
 end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
+no_search_terms: false                             #[boolean][default: false] 
 search_terms: null                                 #[string][default: ""]  e.g. "abc.net.au"
 AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 lists: null                                        #[string][default:null] e.g. "123,456"
-accounts: null                                     #[string][defaultLnull] e.g. "123,456"
+accounts: null                                     #[list][default:null] e.g. ["123","456"]
+page_admin_country: null                           #[string][default:null] e.g. "AU" 
 offset: 0                                          #[int][default: 0] 
 log: false                                         #[boolean][default: false]
 history: false                                     #[boolean][default: false] 
-togbq: false                                       #[booelan][deafult: false]                                  
+togbq: false                                       #[booelan][default: false]                                  
 bq_credential: "xxx.json"                          #service account credential file
 bq_table_id: "dataset_id.table_id "                #dataset_id.table_id on BQ                       
