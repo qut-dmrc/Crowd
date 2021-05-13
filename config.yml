@@ -1,0 +1,21 @@
+## set to null for any param that's not required for your search
+## search parameters
+token: "hKVApYqdgMnU6bF3e0AfXJoFiIlEQ97bJ170tjCJ"                                          #[string][default: ""][REQUIRED] <API Token could be acquired from your dashboard>
+endpoint: "posts/search"                           #[default: "posts/search"]
+search_terms: "automated decision-making,automated decision making,algorithm,algorithms,algorithmic,automate,automates,automated,automating,automation,artificial intelligence,AI"                                 #[string][default: ""]  e.g. "abc.net.au"
+start_date: "2015-01-01"                                  #[string][default: null] e.g."2020-02-02"
+end_date: "2021-04-30"                                     #[string][default: datetime.NOW] e.g."2020-02-02"
+no_search_terms: false                             #[boolean][default: false] 
+lists: null                                        #[string][default:null] e.g. "123,456"
+output_filename: adms.csv                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
+offset: 0                                          #[int][default: 0] 
+log: true                                          #[boolean][default: false]
+page_admin_country: null                           #[string][default:null] e.g. "AU" 
+language: "en"
+history: false                                     #[boolean][default: false] 
+togbq: true                                       #[booelan][deafult: false]                                  
+bq_credential: "C:\\Users\\bruns\\OneDrive - Queensland University of Technology\\Data\\GitHub\\.git\\Crowd\\dmrc-data-392da5bfb42c.json"                          #service account credential file
+bq_table_id: "COE_ADM_automation_tracking.facebook_keywords_1_2"                #dataset_id.table_id on BQ  
+accounts: null                                     #[list][default:null] e.g. ["123","456"]
+AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
+NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
