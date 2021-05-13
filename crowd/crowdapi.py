@@ -123,7 +123,7 @@ class CrowdTangle(API):
     '''
     def __init__(self, config, append=False):
         self.url = "https://api.crowdtangle.com"
-        self.conn = sql.connect('crowdtangle_links')
+        self.conn = sql.connect('crowdtangle')
         self.sqlc = self.conn.cursor()
         self.append = append
         # 56 columns when includeHistory = False
@@ -147,7 +147,7 @@ class CrowdTangle(API):
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
-        logging.basicConfig(filename='info_links.log', level=logging.INFO)
+        logging.basicConfig(filename='info.log', level=logging.INFO)
         with open(os.path.join(os.getcwd(), config)) as f:
             params = yaml.full_load(f)
             # convert params to variables       
@@ -180,10 +180,9 @@ class CrowdTangle(API):
                                     'end_date'] or datetime.datetime.now().isoformat()
                 self.inListIds = self.lists.strip().replace(" ",
                                                             "") if self.lists else None
-                self.language = None
+                self.language = params['language'] or None 
                 if self.endpoint == "posts/search" and 'no_search_terms' in params:
-                    self.rate_limit = 50 
-                    self.language = params['language']
+                    self.rate_limit = 16 
 
             if self.endpoint == "links":
                 self.links = params['links'] or []

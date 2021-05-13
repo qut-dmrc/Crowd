@@ -6,6 +6,7 @@ start_date : null                                  #[string][default: null] e.g.
 end_date: null                                     #[string][default: datetime.NOW] e.g."2020-02-02"
 output_filename: null                              #[string][default: <datetime.NOW>.csv] e.g. "output.csv"
 no_search_terms: false                             #[boolean][default: false] 
+language: null                                     #[string][default: null] e.g. "en"
 search_terms: null                                 #[string][default: ""]  e.g. "abc.net.au"
 AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
