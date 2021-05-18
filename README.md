@@ -23,7 +23,9 @@ pip install -r requirements.txt
 ```
 - Edit the config file(.yml) for your query, `insta_config_template.yml` provides you the template
   * Get the API access token from the dashboard setting(gear icon)-> API Access-> copy the token and paste it in between double quotes for token 
-  * Set the history to True if you like to include the counts of emoji interactions over different timestep
+  * Set the downloadImages to true if you like to download the images
+  * Update the list ids you like to scrape from, you can get the list id by clicking on the list name on the dashboard, the id will be displayed on the url, e.g. deadmall has the id of 1546799, by including this list, CrowdTangle will only return the posts from all the accounts in this list (or lists if you provide more than one list)
+  * Set the history to True if you like to include the counts of emoji interactions over different timesteps
   * Set togbq to True if you like to push your data to Bigquery [Optional]
   * Store the credential file in the Crowd folder, and set the bq_credential to <your_credential_file>.json [Optional]
   * Set your search terms or links and the rest of configuaration accordingly to your query.

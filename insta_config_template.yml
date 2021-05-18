@@ -9,7 +9,7 @@ search_terms: null                                 #[string][default: ""]  e.g. 
 downloadImages: true                               #[string][default: false]
 AND_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
 NOT_terms: null                                    #[string][default: ""]  e.g. "abc.net.au"
-lists: "1546799,1546800"                                        #[string][default:null] e.g. "123,456"
+lists: "123,456"                                        #[string][default:null] e.g. "123,456"
 accounts: null                                     #[string][defaultLnull] e.g. "123,456"
 offset: 0                                          #[int][default: 0] 
 log: false                                         #[boolean][default: false]
