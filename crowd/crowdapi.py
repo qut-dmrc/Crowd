@@ -181,8 +181,10 @@ class CrowdTangle(API):
                 self.inListIds = self.lists.strip().replace(" ",
                                                             "") if self.lists else None
                 self.language = params['language'] or None 
-                if self.endpoint == "posts/search" and 'no_search_terms' in params:
-                    self.rate_limit = 16 
+                if self.endpoint == "posts/search" and 'no_search_terms' in params and params['no_search_terms']:
+                    self.rate_limit = 16
+                else:
+                    self.rate_limit = 6 
 
             if self.endpoint == "links":
                 self.links = params['links'] or []
