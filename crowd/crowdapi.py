@@ -9,9 +9,6 @@ import concurrent.futures
 from PIL import Image
 from io import BytesIO
 
-
-from backports.datetime_fromisoformat import MonkeyPatch
-
 from .exceptions import *
 from .togbq import *
 
@@ -188,7 +185,6 @@ class CrowdTangle(API):
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
-        MonkeyPatch.patch_fromisoformat()
         logging.basicConfig(filename='info.log', level=logging.INFO)
         with open(os.path.join(os.getcwd(), config)) as f:
             params = yaml.full_load(f)
