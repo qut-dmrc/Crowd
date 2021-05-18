@@ -16,6 +16,7 @@ You must have access to the CrowdTangle dashboard, and optionally read access to
 ```
 git clone https://github.com/qut-dmrc/Crowd.git
 cd Crowd
+git checkout instagram
 pip3 install virtualenv
 virtualenv env
 [Windows] "env/Scripts/activate.bat" [MAC] source env/bin/activate
