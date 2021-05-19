@@ -607,7 +607,7 @@ class CrowdTangle(API):
         elif not res:
             return None
         else:
-            if res['result'] and res['result']['posts']:
+            if res['result'] and res['result']['posts'] and len(res['result']['posts']) > 0:
                 data = [self.flatten(datum) for datum in res['result']['posts']]
                 self.writeDataToCSV(data)
                 while 'nextPage' in res['result']['pagination']:
@@ -617,12 +617,14 @@ class CrowdTangle(API):
                         nextPage = nextPage + "&searchTerm=" if not self.search_terms or self.search_terms == "" else nextPage
                         nextPage = nextPage + "&accounts=" + self.accountIds if self.accounts else nextPage
                     res = self.get(nextPage,"")
-                    if res:
+                    if res and len(res['result']['posts']) > 0:
                         res = res.json()
                         data = [self.flatten(datum) for datum in res['result']['posts']]
                         self.writeDataToCSV(data)
                     else:
                         return None
+            else:
+                return None
     
     def writeDataToCSV(self,data):
         with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
