@@ -587,6 +587,7 @@ class CrowdTangle(API):
                     print("Check timeframe coverage")
                     self.prevStartDate = self.earliestStartDate
                     end = self.earliestStartDate
+                    self.offset = 0
                     self.runTimeframes(start, end, link)
         elif self.endpoint == "post":
             self.processResponse()
