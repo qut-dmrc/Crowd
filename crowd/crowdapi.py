@@ -68,7 +68,7 @@ class API:
         """
         # Safeguard the rate limit, run request only when there is quota left
         if self.remaining_req <= 0:
-            sleep_time = 60 - datetime.datetime.now().second
+            sleep_time = 3600 if self.rate_limit < 1 else (60 - datetime.datetime.now().second)
             self.log_function("New request available in %s seconds" % sleep_time)
             self._sleep(sleep_time)  # wait until the start of next minute
             self.remaining_req = self.rate_limit
@@ -253,6 +253,9 @@ class CrowdTangle(API):
                                     'end_date'] or datetime.datetime.now().isoformat()
                 self.inListIds = self.lists.strip().replace(" ",
                                                             "") if self.lists else None
+                self.language = params['language'] or None
+                if self.endpoint == "posts/search" and params['no_search_terms']:
+                    self.rate_limit = 20
 
             if self.endpoint == "links":
                 self.links = params['links'] or []
@@ -721,6 +724,7 @@ class CrowdTangle(API):
                                             and_kw=self.and_terms, \
                                             not_kw=self.not_terms, in_list_ids=self.inListIds,
                                             accounts=self.accountIds,
+                                            language=self.language,
                                             page_admin_top_country=self.page_admin_country,
                                             start_date=start, \
                                             end_date=end, offset=self.offset,
