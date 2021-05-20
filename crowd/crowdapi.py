@@ -185,7 +185,7 @@ class CrowdTangle(API):
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
-        logging.basicConfig(filename='info.log', level=logging.INFO)
+        logging.basicConfig(filename='info_insta.log', level=logging.INFO)
         with open(os.path.join(os.getcwd(), config)) as f:
             params = yaml.full_load(f)
             # convert params to variables       
@@ -617,8 +617,9 @@ class CrowdTangle(API):
                         nextPage = nextPage + "&searchTerm=" if not self.search_terms or self.search_terms == "" else nextPage
                         nextPage = nextPage + "&accounts=" + self.accountIds if self.accounts else nextPage
                     res = self.get(nextPage,"")
-                    if res and len(res['result']['posts']) > 0:
+                    if res:
                         res = res.json()
+                        if len(res['result']['posts']) <= 0: return None
                         data = [self.flatten(datum) for datum in res['result']['posts']]
                         self.writeDataToCSV(data)
                     else:
