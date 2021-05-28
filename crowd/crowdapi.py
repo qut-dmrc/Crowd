@@ -172,6 +172,9 @@ class CrowdTangle(API):
                             "accountAccountType",
                             "accountPageAdminTopCountry", #
                             "accountVerified",
+                            "accountPageDescription",
+                            "accountPageCreatedDate",
+                            "accountPageCategory",
                             "imageText", #
                             "videoLengthMS", #
                             "liveVideoStatus", #
@@ -609,6 +612,15 @@ class CrowdTangle(API):
                                                   post['account'] else row.append("")
         row.append(post['account']['verified']) if 'account' in post and 'verified' in \
                                                    post['account'] else row.append("")
+        row.append(
+            post['account']['pageDescription']) if 'account' in post and 'pageDescription' in \
+                                               post['account'] else row.append("")
+        row.append(
+            post['account']['pageCreatedDate']) if 'account' in post and 'pageCreatedDate' in \
+                                               post['account'] else row.append("")
+        row.append(
+            post['account']['pageCategory']) if 'account' in post and 'pageCategory' in \
+                                               post['account'] else row.append("")
         row.append(post['imageText']) if 'imageText' in post else row.append("")
         row.append(post['videoLengthMS']) if 'videoLengthMS' in post else row.append("")
         row.append(
