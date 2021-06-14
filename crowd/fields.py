@@ -88,7 +88,6 @@ from google.cloud import bigquery
 #     "historyExpectedThankfulCount": int,
 #     "historyExpectedCareCount": int
 # }
-
 output_fields = [ "platformId", 
                     "platform", 
                     "date", 
@@ -145,6 +144,64 @@ output_fields = [ "platformId",
                     "liveVideoStatus", #
                     "newId",
                     "id"]
+
+output_fields_schema = [ bigquery.SchemaField("platformId","STRING"), 
+                    bigquery.SchemaField("platform","STRING"), 
+                    bigquery.SchemaField("date","TIMESTAMP"), 
+                    bigquery.SchemaField("updated","TIMESTAMP"), 
+                    bigquery.SchemaField("type","STRING"), 
+                    bigquery.SchemaField("title","STRING"), #
+                    bigquery.SchemaField("caption","STRING"), #
+                    bigquery.SchemaField("description","STRING"), # 
+                    bigquery.SchemaField("message","STRING"), 
+                    bigquery.SchemaField("expandedLinksOriginal","STRING"),
+                    bigquery.SchemaField("expandedLinksExpanded","STRING"),
+                    bigquery.SchemaField("link","STRING"),
+                    bigquery.SchemaField("postUrl","STRING"),
+                    bigquery.SchemaField("subscriberCount","INTEGER"),
+                    bigquery.SchemaField("score","FLOAT"),
+                    bigquery.SchemaField("mediaType","STRING"),
+                    bigquery.SchemaField("mediaUrl","STRING"),
+                    bigquery.SchemaField("mediaHeight","STRING"),
+                    bigquery.SchemaField("mediaWidth","STRING"),
+                    bigquery.SchemaField("mediaFull","STRING"),
+                    bigquery.SchemaField("actualLikeCount","INTEGER"),
+                    bigquery.SchemaField("actualShareCount","INTEGER"),
+                    bigquery.SchemaField("actualCommentCount","INTEGER"),
+                    bigquery.SchemaField("actualLoveCount","INTEGER"),
+                    bigquery.SchemaField("actualWowCount","INTEGER"),
+                    bigquery.SchemaField("actualHahaCount","INTEGER"),
+                    bigquery.SchemaField("actualSadCount","INTEGER"),
+                    bigquery.SchemaField("actualAngryCount","INTEGER"),
+                    bigquery.SchemaField("actualThankfulCount","INTEGER"),
+                    bigquery.SchemaField("actualCareCount","INTEGER"),
+                    bigquery.SchemaField("expectedLikeCount","INTEGER"),
+                    bigquery.SchemaField("expectedShareCount","INTEGER"),
+                    bigquery.SchemaField("expectedCommentCount","INTEGER"),
+                    bigquery.SchemaField("expectedLoveCount","INTEGER"),
+                    bigquery.SchemaField("expectedWowCount","INTEGER"),
+                    bigquery.SchemaField("expectedHahaCount","INTEGER"),
+                    bigquery.SchemaField("expectedSadCount","INTEGER"),
+                    bigquery.SchemaField("expectedAngryCount","INTEGER"),
+                    bigquery.SchemaField("expectedThankfulCount","INTEGER"),
+                    bigquery.SchemaField("expectedCareCount","INTEGER"),
+                    bigquery.SchemaField("accountId","INTEGER"),
+                    bigquery.SchemaField("accountName","STRING"),
+                    bigquery.SchemaField("accountHandle","STRING"),
+                    bigquery.SchemaField("accountProfileImage","STRING"),
+                    bigquery.SchemaField("accountSubscriberCount","INTEGER"),
+                    bigquery.SchemaField("accountUrl","STRING"),
+                    bigquery.SchemaField("accountPlatform","STRING"),
+                    bigquery.SchemaField("accountPlatformId","INTEGER"),
+                    bigquery.SchemaField("accountAccountType","STRING"),
+                    bigquery.SchemaField("accountPageAdminTopCountry","STRING"), #
+                    bigquery.SchemaField("accountVerified","STRING"),
+                    bigquery.SchemaField("imageText","STRING"), #
+                    bigquery.SchemaField("videoLengthMS","FLOAT"), #
+                    bigquery.SchemaField("liveVideoStatus","STRING"), #
+                    bigquery.SchemaField("newId","STRING"),
+                    bigquery.SchemaField("id","STRING")
+                ]
 
 output_history_fields=[
                         "historyActualTimestep",
