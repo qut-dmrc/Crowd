@@ -8,6 +8,7 @@ import csv
 
 from .exceptions import *
 from .togbq import *
+from .fields import output_fields, output_history_fields
 
 
 class API:
@@ -121,91 +122,11 @@ class CrowdTangle(API):
         self.url = "https://api.crowdtangle.com"
         self.read_config(config)
         # 56 columns when includeHistory = False
-        self.fieldnames = [ "platformId", 
-                            "platform", 
-                            "date", 
-                            "updated", 
-                            "type", 
-                            "title", #
-                            "caption", #
-                            "description", # 
-                            "message", 
-                            "expandedLinksOriginal",
-                            "expandedLinksExpanded",
-                            "link",
-                            "postUrl",
-                            "subscriberCount",
-                            "score",
-                            "mediaType",
-                            "mediaUrl",
-                            "mediaHeight",
-                            "mediaWidth",
-                            "mediaFull",
-                            "actualLikeCount",
-                            "actualShareCount",
-                            "actualCommentCount",
-                            "actualLoveCount",
-                            "actualWowCount",
-                            "actualHahaCount",
-                            "actualSadCount",
-                            "actualAngryCount",
-                            "actualThankfulCount",
-                            "actualCareCount",
-                            "expectedLikeCount",
-                            "expectedShareCount",
-                            "expectedCommentCount",
-                            "expectedLoveCount",
-                            "expectedWowCount",
-                            "expectedHahaCount",
-                            "expectedSadCount",
-                            "expectedAngryCount",
-                            "expectedThankfulCount",
-                            "expectedCareCount",
-                            "accountId",
-                            "accountName",
-                            "accountHandle",
-                            "accountProfileImage",
-                            "accountSubscriberCount",
-                            "accountUrl",
-                            "accountPlatform",
-                            "accountPlatformId",
-                            "accountAccountType",
-                            "accountPageAdminTopCountry", #
-                            "accountVerified",
-                            "imageText", #
-                            "videoLengthMS", #
-                            "liveVideoStatus", #
-                            "newId",
-                            "id"]
+        self.fieldnames = output_fields
         if self.history:
             # 79 columns when includeHistory = True
 
-            self.fieldnames = self.fieldnames + \
-                              [
-                                  "historyActualTimestep",
-                                  "historyActualDate",
-                                  "historyActualScore",
-                                  "historyActualLikeCount",
-                                  "historyActualShareCount",
-                                  "historyActualCommentCount",
-                                  "historyActualLoveCount",
-                                  "historyActualWowCount",
-                                  "historyActualHahaCount",
-                                  "historyActualSadCount",
-                                  "historyActualAngryCount",
-                                  "historyActualThankfulCount",
-                                  "historyActualCareCount",
-                                  "historyExpectedLikeCount",
-                                  "historyExpectedShareCount",
-                                  "historyExpectedCommentCount",
-                                  "historyExpectedLoveCount",
-                                  "historyExpectedWowCount",
-                                  "historyExpectedHahaCount",
-                                  "historyExpectedSadCount",
-                                  "historyExpectedAngryCount",
-                                  "historyExpectedThankfulCount",
-                                  "historyExpectedCareCount"
-                              ]
+            self.fieldnames = self.fieldnames = self.fieldnames + output_history_fields
         self.output_file = open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='')
         self.writer = csv.writer(self.output_file)
         if not append:
@@ -427,23 +348,6 @@ class CrowdTangle(API):
 
         return self.api_call("post/{}".format(_id), parameters)
 
-    @staticmethod
-    def getTimeframeList(startDate, endDate):
-        """
-        split timeframe into a list of timeframes with each is of maximum one year margin
-        startDate: type: datetime
-        endDate: type: datetime
-        return: timelist - list of list of string
-        """
-        timeList = []
-        while (endDate - startDate).days >= 365:
-            timeFrameStart = endDate - datetime.timedelta(
-                days=365) + datetime.timedelta(seconds=1)
-            timeList.append([timeFrameStart.isoformat(), endDate.isoformat()])
-            endDate = timeFrameStart - datetime.timedelta(seconds=1)
-        timeList.append([startDate.isoformat(), endDate.isoformat()])
-        return timeList
-
     def flatten(self, post):
         """
         Turn a nested dictionary into a flattened list
@@ -458,9 +362,9 @@ class CrowdTangle(API):
         row.append(post['updated']) if 'updated' in post else row.append("")
         row.append(post['type']) if 'type' in post else row.append("")
         row.append(post['title']) if 'title' in post else row.append("")
-        row.append(post['caption']) if 'caption' in post else row.append("")
-        row.append(post['description']) if 'description' in post else row.append("")
-        row.append(post['message']) if 'message' in post else row.append("")
+        row.append(post['caption'].replace(chr(0),"")) if 'caption' in post else row.append("")
+        row.append(post['description'].replace(chr(0),"")) if 'description' in post else row.append("")
+        row.append(post['message'].replace(chr(0),"")) if 'message' in post else row.append("")
         if 'expandedLinks' in post and isinstance(post['expandedLinks'], list):
             expandedLinksOriginal = [
                 expanded['original'] if 'original' in expanded else "" for expanded in
@@ -609,7 +513,7 @@ class CrowdTangle(API):
                                                   post['account'] else row.append("")
         row.append(post['account']['verified']) if 'account' in post and 'verified' in \
                                                    post['account'] else row.append("")
-        row.append(post['imageText']) if 'imageText' in post else row.append("")
+        row.append(post['imageText'].replace(chr(0),"")) if 'imageText' in post else row.append("")
         row.append(post['videoLengthMS']) if 'videoLengthMS' in post else row.append("")
         row.append(
             post['liveVideoStatus']) if 'liveVideoStatus' in post else row.append("")
