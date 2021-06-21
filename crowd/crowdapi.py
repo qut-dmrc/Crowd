@@ -348,6 +348,23 @@ class CrowdTangle(API):
 
         return self.api_call("post/{}".format(_id), parameters)
 
+    @staticmethod
+    def getTimeframeList(startDate, endDate):
+        """
+        split timeframe into a list of timeframes with each is of maximum one year margin
+        startDate: type: datetime
+        endDate: type: datetime
+        return: timelist - list of list of string
+        """
+        timeList = []
+        while (endDate - startDate).days >= 365:
+            timeFrameStart = endDate - datetime.timedelta(
+                days=365) + datetime.timedelta(seconds=1)
+            timeList.append([timeFrameStart.isoformat(), endDate.isoformat()])
+            endDate = timeFrameStart - datetime.timedelta(seconds=1)
+        timeList.append([startDate.isoformat(), endDate.isoformat()])
+        return timeList
+
     def flatten(self, post):
         """
         Turn a nested dictionary into a flattened list
