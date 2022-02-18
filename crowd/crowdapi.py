@@ -820,10 +820,6 @@ class CrowdTangle(API):
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
-                # if self.endpoint == "links":
-                #     res = self.linksEndpoint(link,include_history=self.history,\
-                #                                 end_date=end, start_date=start, \
-                #                                 offset= self.offset)
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
                     # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
