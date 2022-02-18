@@ -805,7 +805,7 @@ class CrowdTangle(API):
                 else:
                     self.runTimeframes(self.start_date, self.end_date)
                 return
-        self.writeDataToCSV(self.jobEntryTime)
+        # self.writeDataToCSV(self.jobEntryTime)
         if self.togbq:
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name, self.db_table_name+".csv")
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_expanded_links", self.db_table_name+"_expandedLinks.csv")
