@@ -1,6 +1,6 @@
 # Crowd
 
-This Command Line Interface(CLI) tool accesses the CrowdTangle REST API, accesses posts, the leaderboard and the link-checker, stores the data in CSV file and pushes the files into a Google BigQuery database.
+This Command Line Interface(CLI) tool accesses the CrowdTangle REST API, accesses posts, the leaderboard and the link-checker, stores the data in CSV file and pushes the files into a Google BigQuery database by creating a new table or appending if a table with the same schema exists
 
 # Local installation
 
