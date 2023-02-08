@@ -181,7 +181,7 @@ class CrowdTangle(API):
                     newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(self.fieldnames)
-            self.earliestStartDate = None
+        self.earliestStartDate = None
         super().__init__(self.rate_limit)
 
     def read_config(self, config, rate_limit=6):
@@ -213,6 +213,7 @@ class CrowdTangle(API):
                 self.accounts = params['accounts'] or None
                 self.offset = params['offset'] or 0
                 self.start_date = params['start_date']
+                self.language = params['language'] or None 
                 self.end_date = params[
                                     'end_date'] or datetime.datetime.now().isoformat()
                 self.inListIds = self.lists.strip().replace(" ",
@@ -563,6 +564,7 @@ class CrowdTangle(API):
                                         and_kw=self.and_terms, \
                                         not_kw=self.not_terms, in_list_ids=self.inListIds,
                                         accounts=self.accountIds,
+                                        language=self.language,
                                         start_date=start, \
                                         end_date=end, offset=self.offset,
                                         include_history=self.history)
