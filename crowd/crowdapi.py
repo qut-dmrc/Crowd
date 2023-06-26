@@ -182,7 +182,7 @@ class CrowdTangle(API):
                                                             "") if self.lists else None
                 self.language = params['language'] or None 
                 if self.endpoint == "posts/search" and 'no_search_terms' in params and params['no_search_terms']:
-                    self.rate_limit = 16
+                    self.rate_limit = 1
                 else:
                     self.rate_limit = 6 
 
@@ -805,13 +805,13 @@ class CrowdTangle(API):
                 else:
                     self.runTimeframes(self.start_date, self.end_date)
                 return
-        self.writeDataToCSV(self.jobEntryTime)
         if self.togbq:
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name, self.db_table_name+".csv")
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_expanded_links", self.db_table_name+"_expandedLinks.csv")
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_media", self.db_table_name+"_media.csv")
             if self.history:
                 append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_history", self.db_table_name+"_history.csv")
+        # self.writeDataToCSV(self.jobEntryTime)
 
     def runTimeframes(self, start_date, end_date, link=None):
         if self.endpoint == "posts/search" or self.endpoint == "posts" or self.endpoint == "links":
@@ -820,10 +820,7 @@ class CrowdTangle(API):
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
-                if self.endpoint == "links":
-                    res = self.linksEndpoint(link,include_history=self.history,\
-                                                end_date=end, start_date=start, \
-                                                offset= self.offset)
+
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
                     # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
@@ -935,6 +932,8 @@ class CrowdTangle(API):
                 return None
     
     def writeDataToCSV(self, job_id):
+        print('writing_to_csv')
+        print(job_id)
         '''
         job_id: datetime when the job was created
         '''
@@ -956,9 +955,9 @@ class CrowdTangle(API):
             mode = 'a'
             header = False
         df.to_csv(self.db_table_name+".csv",mode=mode, index=False, header=header)
-        df_media.to_csv(self.db_table_name+"_media.csv",mode=mode, index=False, header=header)
-        df_expandedLinks.to_csv(self.db_table_name+"_expandedLinks.csv",mode=mode, index=False, header=header)
-        df_history.to_csv(self.db_table_name+"_history.csv",mode=mode, index=False, header=header)
+        # df_media.to_csv(self.db_table_name+"_media.csv",mode=mode, index=False, header=header)
+        # df_expandedLinks.to_csv(self.db_table_name+"_expandedLinks.csv",mode=mode, index=False, header=header)
+        # df_history.to_csv(self.db_table_name+"_history.csv",mode=mode, index=False, header=header)
 
         # with open(self.output_filename, 'a', encoding='utf-8', errors='ignore', newline='') as f:
         #     writer = csv.writer(f)
