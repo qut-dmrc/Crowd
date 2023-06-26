@@ -148,7 +148,7 @@ class CrowdTangle(API):
 
     def read_config(self, config, rate_limit=6):
         logging.basicConfig(filename='info.log', level=logging.INFO)
-        with open(os.path.join(os.getcwd(), config)) as f:
+        with open(os.path.join(os.getcwd(), config), encoding="utf-8") as f:
             params = yaml.full_load(f)
             # convert params to variables       
             self.endpoint = params['endpoint']
@@ -805,6 +805,7 @@ class CrowdTangle(API):
                 else:
                     self.runTimeframes(self.start_date, self.end_date)
                 return
+        # self.writeDataToCSV(self.jobEntryTime)
         if self.togbq:
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name, self.db_table_name+".csv")
             append_to_bq(self.bq_credential, "crowdtangle."+self.db_table_name+"_expanded_links", self.db_table_name+"_expandedLinks.csv")
@@ -820,7 +821,6 @@ class CrowdTangle(API):
                 start = timeframe[0]
                 end = timeframe[1]
                 self.log_function("Retrieving from {} to {}".format(start, end))
-
                 if self.endpoint == "posts/search":
                     ## break huge account ids into chucks
                     # self.accounts = self.accounts.replace("\n","").replace(" ","").strip().split(',')
