@@ -13,3 +13,4 @@ togbq: false                                       #[booelan][deafult: false]
 bq_credential: "xxx.json"                          #service account credential file
 bq_table_id: "dataset_id.table_id "                #dataset_id.table_id on BQ  
 links: null                                        #[list][default: null]  e.g. ["abc.net.au", "skynews.com.au"]
+downloadMedia: False                               #[boolean][default: false]

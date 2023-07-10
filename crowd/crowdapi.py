@@ -5,6 +5,7 @@ import logging
 import datetime
 import yaml
 import csv
+import urllib.parse
 
 from .exceptions import *
 from .togbq import *
@@ -193,6 +194,12 @@ class CrowdTangle(API):
                 self.start_date= None # post endpoint is included in runTimeFrame which requires start_date and end_date
                 self.end_date= None # post endpoint is included in runTimeFrame which requires start_date and end_date
 
+        self.downloadMedia = params['downloadMedia']
+        self.mediaFolder = 'media'
+        if self.downloadMedia:
+            if not os.path.isdir('media'):
+                print("creating media folder")
+                os.mkdir('media') # create folder
         # clean data
         if self.endpoint != "post":
             self.end_date = datetime.datetime.fromisoformat(self.end_date)
@@ -365,6 +372,15 @@ class CrowdTangle(API):
         timeList.append([startDate.isoformat(), endDate.isoformat()])
         return timeList
 
+    @staticmethod
+    def load_url(url, img_folder):
+        response = requests.get(url, allow_redirects=True)
+        filename = url.split('?')[0].split('/')[-1]
+        open(os.path.join(img_folder,filename),'wb').write(response.content)
+        # img.save(os.path.join(img_folder,filename.split('.')[0]+".jpg"))
+        # if response:
+        #     img = Image.open(BytesIO(response.content)).convert("RGB")
+        #     img.save(os.path.join(img_folder,filename))
     def flatten(self, post):
         """
         Turn a nested dictionary into a flattened list
@@ -404,6 +420,9 @@ class CrowdTangle(API):
                          post['media']]
             mediaUrl = [media['url'] if 'url' in media else "" for media in
                         post['media']]
+            # print(urllib.parse.unquote(mediaUrl[0]))
+            if self.downloadMedia:
+                self.load_url(urllib.parse.unquote(mediaUrl[0]),self.mediaFolder)
             mediaHeight = [media['height'] if 'height' in media else "" for media in
                            post['media']]
             mediaWidth = [media['width'] if 'width' in media else "" for media in
