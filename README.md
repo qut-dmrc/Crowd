@@ -59,6 +59,7 @@ history: false                       Set it to true to includes timestep data fo
 togbq: false                         Set it to true if you like to store the result in Big Query(BQ)                                  
 bq_credential: "xxx.json"            The credential file to push to a dataset in your BQ project
 bq_table_id: "dataset_id.table_id "  The name of the dataset and table to store your data. Dataset must exist in Big Query. Table will be created on the fly.
+downloadMedia:False                   Change it to True should you wish to download media from media urls
 ```
 
 
