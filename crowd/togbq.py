@@ -1,8 +1,10 @@
 from google.cloud import bigquery
 import os
+import logging
+import datetime
 
 
-def append_to_bq(credentials, table_id, csv_file):
+def append_to_bq(credentials, table_id, csv_file, schema=None):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials
     # Construct a BigQuery client object.
     client = bigquery.Client()
@@ -20,6 +22,12 @@ def append_to_bq(credentials, table_id, csv_file):
         skip_leading_rows=1, 
         autodetect=True
     )
+    if schema:
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.CSV, 
+            skip_leading_rows=1, 
+            schema=schema
+        )
     job_config.allow_quoted_newlines = True
 
     with open(csv_file, "rb") as source_file:
@@ -30,5 +38,11 @@ def append_to_bq(credentials, table_id, csv_file):
     print(
         "Loaded {} rows and {} columns to {}".format(
             table.num_rows, len(table.schema), table_id
+        )
+    )
+    logging.basicConfig(filename='info_bq.log', level=logging.INFO)
+    logging.info(
+        "{}: Loaded {} rows and {} columns to {}".format(
+            datetime.datetime.now(),table.num_rows, len(table.schema), table_id
         )
     )
