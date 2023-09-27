@@ -647,6 +647,11 @@ class CrowdTangle(API):
         response = requests.get(url)
         filename = url.split('/')[-1].split("?")[0]
         if response:
-            img = Image.open(BytesIO(response.content))
-            img.save(os.path.join(img_folder,filename))
+            if 'mp4' in filename:
+                print('mp4')
+                with open(os.path.join(img_folder,filename),'wb') as f:
+                    f.write(response.content)
+            else:
+                img = Image.open(BytesIO(response.content))
+                img.save(os.path.join(img_folder,filename))
 
