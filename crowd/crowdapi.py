@@ -186,7 +186,7 @@ class CrowdTangle(API):
 
     def read_config(self, config, rate_limit=6):
         logging.basicConfig(filename='info_insta.log', level=logging.INFO)
-        with open(os.path.join(os.getcwd(), config)) as f:
+        with open(os.path.join(os.getcwd(), config), encoding="utf-8") as f:
             params = yaml.full_load(f)
             # convert params to variables       
             self.endpoint = params['endpoint']
